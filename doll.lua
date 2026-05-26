@@ -287,6 +287,10 @@ local assigns = {
     [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
     [87302988643016]  = loadCustomAsset("Unleashed3.mp3"),
     [131820864449998] = loadCustomAsset("Retract.mp3"), -- giggle or smth here ~
+
+	[97101227703333] = "rbxassetid://139116822099909",  -- .Hit1]  2011x Hit2
+	[93465914238963] = "rbxassetid://88164444698409",  -- Lilith.Hit2] 
+	[113251186335660] = "rbxassetid://5507830073",  -- Lilith.Hit3] 
 	
     [73636680793269] = "rbxassetid://77110140707717",  -- basic Swing
     [108753423324802] = "rbxassetid://77110140707717",  -- basic Swing
