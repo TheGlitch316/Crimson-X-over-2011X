@@ -282,7 +282,12 @@ local assigns = {
     [80901931085615] = loadCustomAsset("NormalChase.mp3"),
     [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
     [112879248941055] = loadCustomAsset("LastLifeChase.mp3"),
+	
+    [112976135484851] = loadCustomAsset("Unleashed1.mp3"),
+    [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
+    [87302988643016]  = loadCustomAsset("Unleashed3.mp3"),
     [131820864449998] = loadCustomAsset("Retract.mp3"), -- giggle or smth here ~
+	
     [73636680793269] = "rbxassetid://77110140707717",  -- basic Swing
     [108753423324802] = "rbxassetid://77110140707717",  -- basic Swing
     [134998846301914] = "rbxassetid://77110140707717",  -- basic Swing
