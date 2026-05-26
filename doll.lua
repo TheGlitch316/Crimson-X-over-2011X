@@ -2,18 +2,6 @@ local Players				= game:GetService("Players")
 local RunService			= game:GetService("RunService")
 local ReplicatedStorage		= game:GetService("ReplicatedStorage")
 
-local player    = Players.LocalPlayer
-local isActive  = false
-local wasActive = false
-
-local State = {
-	mdl			= nil,
-	syncConn	= nil,
-	descConn	= nil,
-	partPairs	= nil,   -- { { src, dst } }
-	hiddenSet	= nil,   -- { [BasePart] = true }
-}
-
 local BONE_MAP = {
 	["HumanoidRootPart"]	= "HumanoidRootPart",
 	["Waist"]				= "waist",
@@ -38,12 +26,6 @@ local function getSkinModel()
 	result = result and result:FindFirstChild("Default", true)
 	_skinModelCache = result
 	return result
-end
-
-local function isTailsDoll()
-	local pf		= workspace:FindFirstChild("Players")
-	local folder	= pf and pf:FindFirstChild(player.Name)
-	return folder ~= nil and folder:GetAttribute("Character") == "TailsDoll"
 end
 
 local function makeRough(model)
@@ -81,12 +63,15 @@ local function customizeEyes(model)
 	if eye2 then setupEye(eye2, eye2.Size) end
 end
 
-local function resetState()
-	if State.syncConn	then State.syncConn:Disconnect();	State.syncConn	= nil end
-	if State.descConn	then State.descConn:Disconnect();	State.descConn	= nil end
-	if State.mdl		then State.mdl:Destroy();			State.mdl		= nil end
-	State.partPairs = nil
-	State.hiddenSet = nil
+local activeData = {}
+
+local function resetState(playerName)
+	local data = activeData[playerName]
+	if not data then return end
+	if data.syncConn then data.syncConn:Disconnect() end
+	if data.descConn then data.descConn:Disconnect() end
+	if data.mdl then data.mdl:Destroy() end
+	activeData[playerName] = nil
 end
 
 local function hideDescendants(container, hiddenSet)
@@ -104,35 +89,46 @@ local function showDescendants(container)
 	end
 end
 
-local function applyMdl(char)
-	resetState()
+local function applyToPlayer(playerName)
+	resetState(playerName)
 	
-	local skinSource = getSkinModel()
-	if not skinSource then return warn("[TailsDoll to Cream] can't find cream model!") end
+	local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
+	if not playerModel then return end
+	if playerModel:GetAttribute("Character") ~= "TailsDoll" then return end
 	
-	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local playerObj = Players:FindFirstChild(playerName)
+	local standardChar = playerObj and playerObj.Character
+	local defaultFolder = playerModel:FindFirstChild("Default")
+	local source = defaultFolder or standardChar
+	if not source then return end
+	
+	local hrp = source:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	
-	local playerFolder	= workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
-	local defaultFolder	= playerFolder and playerFolder:FindFirstChild("Default")
-	local source		= defaultFolder or char
-	
 	local hiddenSet = {}
-	hideDescendants(char, hiddenSet)
-	
+	hideDescendants(playerModel, hiddenSet)
 	if defaultFolder then
 		hideDescendants(defaultFolder, hiddenSet)
-		State.descConn = defaultFolder.DescendantAdded:Connect(function(v)
-			if isActive and v:IsA("BasePart") then
+	end
+	if standardChar and standardChar ~= source then
+		hideDescendants(standardChar, hiddenSet)
+	end
+	
+	local descConn = nil
+	if defaultFolder then
+		descConn = defaultFolder.DescendantAdded:Connect(function(v)
+			if v:IsA("BasePart") then
 				v.Transparency = 1
-				hiddenSet[v]   = true
+				hiddenSet[v] = true
 			end
 		end)
 	end
-	State.hiddenSet = hiddenSet
+	
+	local skinSource = getSkinModel()
+	if not skinSource then return end
 	
 	local mdl = skinSource:Clone()
-	mdl.Parent = playerFolder or char
+	mdl.Parent = playerModel
 	
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart")
 	if not newHrp then mdl:Destroy(); return end
@@ -151,12 +147,10 @@ local function applyMdl(char)
 	newHrp.Anchored		= true
 	newHrp.Transparency	= 1
 	newHrp.CFrame		= hrp.CFrame
-	State.mdl			= mdl
 	
 	makeRough(mdl)
 	customizeEyes(mdl)
 	
-	-- rabbit muzzle :>
 	local muzzle = mdl:FindFirstChild("muzzle", true)
 	if muzzle then
 		local decal		= Instance.new("Decal")
@@ -174,20 +168,14 @@ local function applyMdl(char)
 			dstPart.Anchored = true
 			partPairs[#partPairs + 1] = { srcPart, dstPart }
 			found += 1
-		else
-			warn("[TailsDoll to Cream] find fault:", srcName, "->", dstName)
 		end
 	end
-	State.partPairs = partPairs
-	print(string.format("[TailsDoll to Cream] map: %d / %d", found, total))
 	
-	State.syncConn = RunService.Heartbeat:Connect(function()
-		if not hrp.Parent or not newHrp.Parent then
-			State.syncConn:Disconnect()
-			State.syncConn = nil
+	local syncConn = RunService.Heartbeat:Connect(function()
+		if not playerModel.Parent then
+			resetState(playerName)
 			return
 		end
-		
 		for part in pairs(hiddenSet) do
 			if part.Parent then
 				part.Transparency = 1
@@ -195,55 +183,79 @@ local function applyMdl(char)
 				hiddenSet[part] = nil
 			end
 		end
-		
-		local pairs_ = partPairs
-		for i = 1, #pairs_ do
-			local p = pairs_[i]
+		for i = 1, #partPairs do
+			local p = partPairs[i]
 			if p[1].Parent and p[2].Parent then
 				p[2].CFrame = p[1].CFrame
 			end
 		end
 	end)
+	
+	activeData[playerName] = {
+		mdl = mdl,
+		syncConn = syncConn,
+		descConn = descConn,
+		hiddenSet = hiddenSet,
+		partPairs = partPairs,
+	}
 end
 
-local function removeMdl()
-	resetState()
+local function removeFromPlayer(playerName)
+	local data = activeData[playerName]
+	if not data then return end
 	
-	local playerFolder  = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
-	local defaultFolder = playerFolder and playerFolder:FindFirstChild("Default")
+	local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
+	local playerObj = Players:FindFirstChild(playerName)
+	local standardChar = playerObj and playerObj.Character
+	local defaultFolder = playerModel and playerModel:FindFirstChild("Default")
+	
 	if defaultFolder then showDescendants(defaultFolder) end
+	if standardChar then showDescendants(standardChar) end
+	if playerModel then showDescendants(playerModel) end
 	
-	local char = player.Character
-	if char then showDescendants(char) end
+	resetState(playerName)
 end
 
-player.CharacterAdded:Connect(function(char)
-	if isActive then
-		task.wait(1)
-		applyMdl(char)
+local function onModelAdded(model)
+	if not model:IsA("Model") then return end
+	local name = model.Name
+	if model:GetAttribute("Character") == "TailsDoll" then
+		task.wait(0.5)
+		applyToPlayer(name)
 	end
-end)
-
-RunService.Heartbeat:Connect(function()
-	local active = isTailsDoll()
-	if active == wasActive then return end
-	wasActive = active
-	isActive  = active
-	if active then
-		task.wait(1)
-		applyMdl(player.Character or player.CharacterAdded:Wait())
-	else
-		removeMdl()
-	end
-end)
-
-if isTailsDoll() then
-	isActive  = true
-	wasActive = true
-	task.wait(1)
-	applyMdl(player.Character or player.CharacterAdded:Wait())
+	model.AttributeChanged:Connect(function(attr)
+		if attr == "Character" then
+			if model:GetAttribute("Character") == "TailsDoll" then
+				applyToPlayer(name)
+			else
+				removeFromPlayer(name)
+			end
+		end
+	end)
 end
 
+local function onModelRemoved(model)
+	local name = model.Name
+	removeFromPlayer(name)
+end
+
+local playersContainer = workspace:FindFirstChild("Players")
+if playersContainer then
+	for _, model in ipairs(playersContainer:GetChildren()) do
+		onModelAdded(model)
+	end
+	playersContainer.ChildAdded:Connect(onModelAdded)
+	playersContainer.ChildRemoved:Connect(onModelRemoved)
+end
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function(char)
+		local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
+		if playerModel and playerModel:GetAttribute("Character") == "TailsDoll" then
+			applyToPlayer(player.Name)
+		end
+	end)
+end)
 
 -- custom sounds..
 local function loadCustomAsset(fileName)
@@ -267,19 +279,18 @@ local function loadCustomAsset(fileName)
 end
 
 local assigns = {
-    [80901931085615] = loadCustomAsset("NormalChase.mp3")
-    [129416111545242] = loadCustomAsset("TerrorRadius.mp3")
-    [112879248941055] = loadCustomAsset("LastLifeChase.mp3")
-    [131820864449998] = loadCustomAsset("Retract.mp3") -- giggle or smth here ~
-	[73636680793269] = "rbxassetid://129707701166974" -- NMI Swing XD
-	[108753423324802] = "rbxassetid://77110140707717" -- basic Swing
-	[134998846301914] = "rbxassetid://129707701166974" -- NMI Swing XD
+    [80901931085615] = loadCustomAsset("NormalChase.mp3"),
+    [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
+    [112879248941055] = loadCustomAsset("LastLifeChase.mp3"),
+    [131820864449998] = loadCustomAsset("Retract.mp3"), -- giggle or smth here ~
+    [73636680793269] = "rbxassetid://77110140707717",  -- basic Swing
+    [108753423324802] = "rbxassetid://129707701166974", -- NMI Swing XD
+    [134998846301914] = "rbxassetid://129707701166974", -- NMI again
 }
 
 game.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
-        task.wait(0.01) -- huh
-        -- print(desc:GetFullName() .. " - " .. tostring(desc.SoundId))
+        task.wait(0.01)
         local soundId = desc.SoundId
         local id = tonumber(soundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then
