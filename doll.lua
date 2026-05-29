@@ -97,7 +97,7 @@ local function applyToPlayer(playerName)
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
 
-	local hrp = source:FindFirstChild("HumanoidRootPart")
+	local hrp = plrModel:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
 	-- hide original visuals
