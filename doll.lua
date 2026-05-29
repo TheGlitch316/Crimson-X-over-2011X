@@ -1,9 +1,11 @@
+warn("asd")
+
 local Players			= game:GetService("Players")
 local RunService		= game:GetService("RunService")
 local ReplicatedStorage	= game:GetService("ReplicatedStorage")
 
-local function remapMotors(honeyModel)
-	local function find(model, name)
+local function remapMotors(model)
+	local function find(name)
 		return model:FindFirstChild(name, true)
 	end
 
@@ -13,12 +15,28 @@ local function remapMotors(honeyModel)
 		end
 	end
 
-	rename(find("Body"), "MainBody")
 	rename(find("waist"), "Waist")
-	rename(find("Left Sleeve"), "LArm1")
+	rename(find("Body"), "MainBody")
+	rename(find("eye1"), "REye")
+	rename(find("eye2"), "LEye")
 	rename(find("Right Sleeve"), "RArm1")
-	rename(find("Left Leg"), "LLeg1")
+	rename(find("Cylinder.013"), "RArm2")
+	rename(find("Cylinder.014"), "RArm3")
+	rename(find("Cylinder.017"), "RArm4")
+	rename(find("Right Hand"), "RHand")
+	rename(find("Left Sleeve"), "LArm1")
+	rename(find("Cylinder.023"), "LArm2")
+	rename(find("Cylinder.022"), "LArm3")
+	rename(find("Left Hand"), "LHand")
 	rename(find("Right Leg"), "RLeg1")
+	rename(find("Cylinder.001"), "RLeg2")
+	rename(find("Cylinder"), "RLeg3")
+	rename(find("Right Shoe"), "RShoe")
+	rename(find("Left Leg"), "LLeg1")
+	rename(find("Cylinder.034"), "LLeg2")
+	rename(find("Cylinder.035"), "LLeg3")
+	rename(find("Left Shoe"), "LShoe")
+	rename(find("tail"), "RTail")
 end
 
 local _skinModelCache = nil
@@ -71,125 +89,81 @@ local function customizeEyes(model)
 	if eye2 then setupEye(eye2, eye2.Size) end
 end
 
-local activeData = {}
-
-local function resetState(playerName)
-	local data = activeData[playerName]
-	if not data then return end
-	if data.syncConn then data.syncConn:Disconnect() end
-	if data.descConn then data.descConn:Disconnect() end
-	if data.mdl then data.mdl:Destroy() end
-	activeData[playerName] = nil
-end
-
-local function showDescendants(container)
-	for _, v in ipairs(container:GetDescendants()) do
-		if v:IsA("BasePart") then v.Transparency = 0 end
-	end
-end
-
 local function applyToPlayer(playerName)
-
-	resetState(playerName)
-
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
 
-	local source = plrModel:FindFirstChild("Default") or Players[playerName].Skin
-	if not source then return end
-
-	local hrp = source:FindFirstChild("HumanoidRootPart")
+	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
-
-	-- hide original visuals
-	for _, v in ipairs(plrModel:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.Transparency = 1
-		end
-	end
-	local descConn = nil
-	descConn = plrModel.DescendantAdded:Connect(function(v)
-		if v:IsA("BasePart") then
-			v.Transparency = 1
-		end
-	end)
 
 	local mdl = getSkinModel()
 	if not mdl then return end
 
 	mdl = mdl:Clone()
 	mdl.Parent = plrModel
-
-	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
-	if not newHrp then mdl:Destroy() return end
 	
 	for _, v in ipairs(mdl:GetDescendants()) do
 		if v:IsA("Humanoid") then
 			v:Destroy()
 		elseif v:IsA("BasePart") then
 			v.CanCollide = false
+			v.Anchored = false
 		end
 	end
+
+	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
+	if not newHrp then mdl:Destroy() return end
 
 	makeRough(mdl)
 	customizeEyes(mdl)
 	remapMotors(mdl)
 
-	local hrpOffset = Vector3.new(0, -1.0, 0)
+    local toRestoreTransparency = {}
+	for _, part in ipairs(mdl:GetDescendants()) do
+		if part:IsA("BasePart") then
+			toRestoreTransparency[part] = part.Transparency
+		end
+	end
+
+	local hrpOffset = Vector3.new(0, -1, 0)
 
 	local syncConn
 	syncConn = RunService.Heartbeat:Connect(function()
-		if not plrModel.Parent then
-			resetState(playerName)
+		if not mdl or not mdl.Parent then
+			syncConn:Disconnect()
+			warn("pizdec")
+			applyToPlayer(playerName)
 			return
 		end
+		
+		if plrModel:GetAttribute("Character") ~= "TailsDoll" then
+			syncConn:Disconnect() 
+			mdl:Destroy()
+			return
+		end
+		
+		--newHead.CFrame = head.CFrame
 		newHrp.CFrame = hrp.CFrame + hrpOffset
+
+		for _, v in ipairs(plrModel:GetDescendants()) do
+			if v:IsA("BasePart") then v.Transparency = 1 end
+		end
+		for v, t in pairs(toRestoreTransparency) do v.Transparency = t end
 	end)
-
-	activeData[playerName] = {
-		mdl = mdl,
-		syncConn = syncConn,
-	}
-end
-
-local function removeFromPlayer(playerName)
-	local data = activeData[playerName]
-	if not data then return end
-
-	local playerModel  = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
-	local playerObj    = Players:FindFirstChild(playerName)
-	local standardChar = playerObj and playerObj.Character
-	local defaultFolder = playerModel and playerModel:FindFirstChild("Default")
-
-	if defaultFolder  then showDescendants(defaultFolder)  end
-	if standardChar   then showDescendants(standardChar)   end
-	if playerModel    then showDescendants(playerModel)    end
-
-	resetState(playerName)
 end
 
 local function onModelAdded(model)
 	if not model:IsA("Model") then return end
-	local name = model.Name
-	if model:GetAttribute("Character") == "TailsDoll" then
-		task.wait(0.5)
-		applyToPlayer(name)
-	end
+	task.wait(1)
+    applyToPlayer(model.Name)
 	model.AttributeChanged:Connect(function(attr)
 		if attr == "Character" then
-			if model:GetAttribute("Character") == "TailsDoll" then
-				applyToPlayer(name)
-			else
-				removeFromPlayer(name)
-			end
+			task.wait(1)
+			applyToPlayer(model.Name) 
 		end
 	end)
-end
-
-local function onModelRemoved(model)
-	removeFromPlayer(model.Name)
 end
 
 local playersContainer = workspace:FindFirstChild("Players")
@@ -198,15 +172,12 @@ if playersContainer then
 		onModelAdded(model)
 	end
 	playersContainer.ChildAdded:Connect(onModelAdded)
-	playersContainer.ChildRemoved:Connect(onModelRemoved)
 end
 
 Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function()
-		local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
-		if playerModel and playerModel:GetAttribute("Character") == "TailsDoll" then
-			applyToPlayer(player.Name)
-		end
+		local playerModel = workspace.Players:FindFirstChild(player.Name)
+		onModelAdded(playerModel)
 	end)
 end)
 
