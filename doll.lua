@@ -89,6 +89,8 @@ local function applyToPlayer(playerName)
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
 
+	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
+
 	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
 
