@@ -1,6 +1,25 @@
-local Players				= game:GetService("Players")
-local RunService			= game:GetService("RunService")
-local ReplicatedStorage		= game:GetService("ReplicatedStorage")
+local Players			= game:GetService("Players")
+local RunService		= game:GetService("RunService")
+local ReplicatedStorage	= game:GetService("ReplicatedStorage")
+
+local function remapMotors(honeyModel)
+	local function find(model, name)
+		return model:FindFirstChild(name, true)
+	end
+
+	local function rename(obj, newName)
+		if obj and obj.Name ~= newName then
+			obj.Name = newName
+		end
+	end
+
+	rename(find("Body"), "MainBody")
+	rename(find("waist"), "Waist")
+	rename(find("Left Sleeve"), "LArm1")
+	rename(find("Right Sleeve"), "RArm1")
+	rename(find("Left Leg"), "LLeg1")
+	rename(find("Right Leg"), "RLeg1")
+end
 
 local _skinModelCache = nil
 local function getSkinModel()
@@ -52,103 +71,6 @@ local function customizeEyes(model)
 	if eye2 then setupEye(eye2, eye2.Size) end
 end
 
-local function remapMotors(creamModel)
-	local function find(name)
-		return creamModel:FindFirstChild(name, true)
-	end
-
-	local function rename(obj, newName)
-		if obj and obj.Name ~= newName then
-			obj.Name = newName
-		end
-	end
-
-	-- Части
-	rename(find("Body"), "MainBody")
-	rename(find("waist"), "Waist")
-	rename(find("Left Sleeve"), "LArm1")
-	rename(find("Right Sleeve"), "RArm1")
-	rename(find("Left Leg"), "LLeg1")
-	rename(find("Right Leg"), "RLeg1")
-
-	-- Motor6D в HumanoidRootPart
-	local hrp = find("HumanoidRootPart")
-	if hrp then
-		for _, motor in ipairs(hrp:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				if motor.Name == "waist" then motor.Name = "Waist" end
-			end
-		end
-	end
-
-	-- Motor6D в Waist
-	local waist = find("Waist")
-	if waist then
-		for _, motor in ipairs(waist:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				if motor.Name == "Body" then motor.Name = "MainBody" end
-				if motor.Name == "Left Leg" then motor.Name = "LLeg1" end
-				if motor.Name == "Right Leg" then motor.Name = "RLeg1" end
-			end
-		end
-	end
-
-	-- Motor6D в MainBody
-	local mainBody = find("MainBody")
-	if mainBody then
-		for _, motor in ipairs(mainBody:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				if motor.Name == "Left Sleeve" then motor.Name = "LArm1" end
-				if motor.Name == "Right Sleeve" then motor.Name = "RArm1" end
-			end
-		end
-	end
-
-	-- Цепочка левой руки
-	local lArm1 = find("LArm1")
-	if lArm1 then
-		for _, motor in ipairs(lArm1:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				motor.Name = "LArm2"
-				break
-			end
-		end
-	end
-
-	-- Цепочка правой руки
-	local rArm1 = find("RArm1")
-	if rArm1 then
-		for _, motor in ipairs(rArm1:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				motor.Name = "RArm2"
-				break
-			end
-		end
-	end
-
-	-- Цепочка левой ноги
-	local lLeg1 = find("LLeg1")
-	if lLeg1 then
-		for _, motor in ipairs(lLeg1:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				motor.Name = "LLeg2"
-				break
-			end
-		end
-	end
-
-	-- Цепочка правой ноги
-	local rLeg1 = find("RLeg1")
-	if rLeg1 then
-		for _, motor in ipairs(rLeg1:GetChildren()) do
-			if motor:IsA("Motor6D") then
-				motor.Name = "RLeg2"
-				break
-			end
-		end
-	end
-end
-
 local activeData = {}
 
 local function resetState(playerName)
@@ -161,47 +83,42 @@ local function resetState(playerName)
 end
 
 local function showDescendants(container)
-	for a, v in ipairs(container:GetDescendants()) do
+	for _, v in ipairs(container:GetDescendants()) do
 		if v:IsA("BasePart") then v.Transparency = 0 end
 	end
 end
 
 local function applyToPlayer(playerName)
+
 	resetState(playerName)
-	
+
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
-	
+
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
-	
-	local source = plrModel:FindFirstChild("Default") or Players[playerName].Character
-	if not source then return end
-	
+
 	local hrp = source:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
-	
+
 	-- hide original visuals
 	for _, v in ipairs(plrModel:GetDescendants()) do
 		if v:IsA("BasePart") then
 			v.Transparency = 1
 		end
 	end
-	
 	local descConn = nil
-	if source then
-		descConn = source.DescendantAdded:Connect(function(v)
-			if v:IsA("BasePart") then
-				v.Transparency = 1
-			end
-		end)
-	end
-	
-	local skinSource = getSkinModel()
-	if not skinSource then return end
-	
-	local mdl = skinSource:Clone()
+	descConn = plrModel.DescendantAdded:Connect(function(v)
+		if v:IsA("BasePart") then
+			v.Transparency = 1
+		end
+	end)
+
+	local mdl = getSkinModel()
+	if not mdl then return end
+
+	mdl = mdl:Clone()
 	mdl.Parent = plrModel
-	
+
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart")
 	if not newHrp then mdl:Destroy() return end
 	
@@ -212,50 +129,41 @@ local function applyToPlayer(playerName)
 			v.CanCollide = false
 		end
 	end
-	
+
 	makeRough(mdl)
 	customizeEyes(mdl)
 	remapMotors(mdl)
-	
-	local muzzle = mdl:FindFirstChild("muzzle", true)
-	if muzzle then
-		local decal		= Instance.new("Decal")
-		decal.Texture	= "rbxassetid://7321057974"
-		decal.Parent	= muzzle
-	end
-	
+
+	local hrpOffset = Vector3.new(0, -1.0, 0)
+
 	local syncConn
 	syncConn = RunService.Heartbeat:Connect(function()
 		if not plrModel.Parent then
 			resetState(playerName)
 			return
 		end
-		if newHrp and hrp and newHrp.Parent and hrp.Parent then
-			newHrp.CFrame = hrp.CFrame
-		end
+		newHrp.CFrame = hrp.CFrame + hrpOffset
 	end)
-	
+
 	activeData[playerName] = {
 		mdl = mdl,
 		syncConn = syncConn,
-		descConn = descConn,
-		hiddenSet = hiddenSet,
 	}
 end
 
 local function removeFromPlayer(playerName)
 	local data = activeData[playerName]
 	if not data then return end
-	
-	local plrModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
-	local playerObj = Players:FindFirstChild(playerName)
+
+	local playerModel  = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
+	local playerObj    = Players:FindFirstChild(playerName)
 	local standardChar = playerObj and playerObj.Character
-	local defaultFolder = plrModel and plrModel:FindFirstChild("Default")
-	
-	if defaultFolder then showDescendants(defaultFolder) end
-	if standardChar then showDescendants(standardChar) end
-	if plrModel then showDescendants(plrModel) end
-	
+	local defaultFolder = playerModel and playerModel:FindFirstChild("Default")
+
+	if defaultFolder  then showDescendants(defaultFolder)  end
+	if standardChar   then showDescendants(standardChar)   end
+	if playerModel    then showDescendants(playerModel)    end
+
 	resetState(playerName)
 end
 
@@ -291,13 +199,14 @@ if playersContainer then
 end
 
 Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function(char)
-		local plrModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
-		if plrModel and plrModel:GetAttribute("Character") == "TailsDoll" then
+	player.CharacterAdded:Connect(function()
+		local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(player.Name)
+		if playerModel and playerModel:GetAttribute("Character") == "TailsDoll" then
 			applyToPlayer(player.Name)
 		end
 	end)
 end)
+
 
 -- custom sounds..
 local function loadCustomAsset(fileName)
@@ -328,15 +237,15 @@ local assigns = {
     [112976135484851] = loadCustomAsset("Unleashed1.mp3"),
     [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
     [87302988643016]  = loadCustomAsset("Unleashed3.mp3"),
-    [131820864449998] = loadCustomAsset("Retract.mp3"),
+    [131820864449998] = loadCustomAsset("Retract.mp3"), -- giggle or smth here ~
 
-	[97101227703333] = "rbxassetid://139116822099909",
-	[93465914238963] = "rbxassetid://88164444698409",
-	[113251186335660] = "rbxassetid://5507830073",
+	[97101227703333] = "rbxassetid://139116822099909",  -- .Hit1]  2011x Hit2
+	[93465914238963] = "rbxassetid://88164444698409",  -- Lilith.Hit2] 
+	[113251186335660] = "rbxassetid://5507830073",  -- Lilith.Hit3] 
 	
-    [73636680793269] = "rbxassetid://77110140707717",
-    [108753423324802] = "rbxassetid://77110140707717",
-    [134998846301914] = "rbxassetid://77110140707717",
+    [73636680793269] = "rbxassetid://77110140707717",  -- basic Swing
+    [108753423324802] = "rbxassetid://77110140707717",  -- basic Swing
+    [134998846301914] = "rbxassetid://77110140707717",  -- basic Swing
 }
 
 game.DescendantAdded:Connect(function(desc)
