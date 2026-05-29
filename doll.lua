@@ -97,7 +97,7 @@ local function applyToPlayer(playerName)
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
 
-	local hrp = plrModel:FindFirstChild("HumanoidRootPart")
+	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
 
 	-- hide original visuals
@@ -119,7 +119,7 @@ local function applyToPlayer(playerName)
 	mdl = mdl:Clone()
 	mdl.Parent = plrModel
 
-	local newHrp = mdl:FindFirstChild("HumanoidRootPart")
+	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
 	if not newHrp then mdl:Destroy() return end
 	
 	for _, v in ipairs(mdl:GetDescendants()) do
