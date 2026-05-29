@@ -8,9 +8,13 @@ local BONE_MAP = {
 	["MainBody"]			= "Body",
 	["Head"]				= "Head",
 	["RArm1"]				= "Right Sleeve",
+	["RArm2"]				= "Cylinder.013",
 	["LArm1"]				= "Left Sleeve",
+	["LArm2"]				= "Cylinder.023",
 	["RLeg1"]				= "Right Leg",
+	["RLeg2"]				= "Cylinder.001",
 	["LLeg1"]				= "Left Leg",
+	["LLeg2"]				= "Cylinder.034",
 }
 
 local _skinModelCache = nil
@@ -61,6 +65,99 @@ local function customizeEyes(model)
 	local eye2 = model:FindFirstChild("eye2", true)
 	if eye1 then setupEye(eye1, eye1.Size) end
 	if eye2 then setupEye(eye2, eye2.Size) end
+end
+
+--========================================================
+-- REMAP MOTORS - переименование костей под TailsDoll
+--========================================================
+
+local function remapMotors(creamModel, tailsDollSource)
+	local function find(name)
+		return creamModel:FindFirstChild(name, true)
+	end
+
+	local function rename(obj, newName)
+		if obj and obj.Name ~= newName then
+			obj.Name = newName
+		end
+	end
+
+	-- Переименовываем части Cream в имена TailsDoll
+	rename(find("Body"), "MainBody")
+	rename(find("waist"), "Waist")
+	rename(find("Left Sleeve"), "LArm1")
+	rename(find("Right Sleeve"), "RArm1")
+	rename(find("Left Leg"), "LLeg1")
+	rename(find("Right Leg"), "RLeg1")
+
+	-- Переименовываем Motor6D в иерархии
+	local hrp = find("HumanoidRootPart")
+	if hrp then
+		for _, motor in ipairs(hrp:GetChildren()) do
+			if motor:IsA("Motor6D") and motor.Name == "waist" then
+				motor.Name = "Waist"
+			end
+		end
+	end
+
+	local waist = find("Waist")
+	if waist then
+		for _, motor in ipairs(waist:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				if motor.Name == "Body" then motor.Name = "MainBody" end
+				if motor.Name == "Left Leg" then motor.Name = "LLeg1" end
+				if motor.Name == "Right Leg" then motor.Name = "RLeg1" end
+			end
+		end
+	end
+
+	local mainBody = find("MainBody")
+	if mainBody then
+		for _, motor in ipairs(mainBody:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				if motor.Name == "Left Sleeve" then motor.Name = "LArm1" end
+				if motor.Name == "Right Sleeve" then motor.Name = "RArm1" end
+			end
+		end
+	end
+
+	-- Переименовываем цепочки рук
+	local lArm1 = find("LArm1")
+	if lArm1 then
+		for _, motor in ipairs(lArm1:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				motor.Name = "LArm2"
+			end
+		end
+	end
+
+	local rArm1 = find("RArm1")
+	if rArm1 then
+		for _, motor in ipairs(rArm1:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				motor.Name = "RArm2"
+			end
+		end
+	end
+
+	-- Переименовываем цепочки ног
+	local lLeg1 = find("LLeg1")
+	if lLeg1 then
+		for _, motor in ipairs(lLeg1:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				motor.Name = "LLeg2"
+			end
+		end
+	end
+
+	local rLeg1 = find("RLeg1")
+	if rLeg1 then
+		for _, motor in ipairs(rLeg1:GetChildren()) do
+			if motor:IsA("Motor6D") then
+				motor.Name = "RLeg2"
+			end
+		end
+	end
 end
 
 local activeData = {}
@@ -150,6 +247,7 @@ local function applyToPlayer(playerName)
 	
 	makeRough(mdl)
 	customizeEyes(mdl)
+	remapMotors(mdl, source)
 	
 	local muzzle = mdl:FindFirstChild("muzzle", true)
 	if muzzle then
@@ -158,20 +256,9 @@ local function applyToPlayer(playerName)
 		decal.Parent	= muzzle
 	end
 	
-	local partPairs = {}
-	local found, total = 0, 0
-	for srcName, dstName in pairs(BONE_MAP) do
-		total += 1
-		local srcPart = source:FindFirstChild(srcName, true)
-		local dstPart = mdl:FindFirstChild(dstName, true)
-		if srcPart and dstPart then
-			dstPart.Anchored = true
-			partPairs[#partPairs + 1] = { srcPart, dstPart }
-			found += 1
-		end
-	end
-	
-	local syncConn = RunService.Heartbeat:Connect(function()
+	-- Синкируем только HumanoidRootPart, остальное по Motor6D
+	local syncConn
+	syncConn = RunService.Heartbeat:Connect(function()
 		if not playerModel.Parent then
 			resetState(playerName)
 			return
@@ -183,11 +270,9 @@ local function applyToPlayer(playerName)
 				hiddenSet[part] = nil
 			end
 		end
-		for i = 1, #partPairs do
-			local p = partPairs[i]
-			if p[1].Parent and p[2].Parent then
-				p[2].CFrame = p[1].CFrame
-			end
+		-- Синкируем только корень - остальное через Motor6D
+		if newHrp and hrp and newHrp.Parent and hrp.Parent then
+			newHrp.CFrame = hrp.CFrame
 		end
 	end)
 	
@@ -196,7 +281,6 @@ local function applyToPlayer(playerName)
 		syncConn = syncConn,
 		descConn = descConn,
 		hiddenSet = hiddenSet,
-		partPairs = partPairs,
 	}
 end
 
