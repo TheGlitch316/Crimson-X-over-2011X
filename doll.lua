@@ -63,7 +63,7 @@ local function remapMotors(creamModel)
 		end
 	end
 
-	-- Переименовываем части
+	-- Части
 	rename(find("Body"), "MainBody")
 	rename(find("waist"), "Waist")
 	rename(find("Left Sleeve"), "LArm1")
@@ -71,16 +71,17 @@ local function remapMotors(creamModel)
 	rename(find("Left Leg"), "LLeg1")
 	rename(find("Right Leg"), "RLeg1")
 
-	-- Переименовываем Motor6D
+	-- Motor6D в HumanoidRootPart
 	local hrp = find("HumanoidRootPart")
 	if hrp then
 		for _, motor in ipairs(hrp:GetChildren()) do
-			if motor:IsA("Motor6D") and motor.Name == "waist" then
-				motor.Name = "Waist"
+			if motor:IsA("Motor6D") then
+				if motor.Name == "waist" then motor.Name = "Waist" end
 			end
 		end
 	end
 
+	-- Motor6D в Waist
 	local waist = find("Waist")
 	if waist then
 		for _, motor in ipairs(waist:GetChildren()) do
@@ -92,6 +93,7 @@ local function remapMotors(creamModel)
 		end
 	end
 
+	-- Motor6D в MainBody
 	local mainBody = find("MainBody")
 	if mainBody then
 		for _, motor in ipairs(mainBody:GetChildren()) do
@@ -102,39 +104,46 @@ local function remapMotors(creamModel)
 		end
 	end
 
-	-- Цепочки рук и ног
+	-- Цепочка левой руки
 	local lArm1 = find("LArm1")
 	if lArm1 then
 		for _, motor in ipairs(lArm1:GetChildren()) do
 			if motor:IsA("Motor6D") then
 				motor.Name = "LArm2"
+				break
 			end
 		end
 	end
 
+	-- Цепочка правой руки
 	local rArm1 = find("RArm1")
 	if rArm1 then
 		for _, motor in ipairs(rArm1:GetChildren()) do
 			if motor:IsA("Motor6D") then
 				motor.Name = "RArm2"
+				break
 			end
 		end
 	end
 
+	-- Цепочка левой ноги
 	local lLeg1 = find("LLeg1")
 	if lLeg1 then
 		for _, motor in ipairs(lLeg1:GetChildren()) do
 			if motor:IsA("Motor6D") then
 				motor.Name = "LLeg2"
+				break
 			end
 		end
 	end
 
+	-- Цепочка правой ноги
 	local rLeg1 = find("RLeg1")
 	if rLeg1 then
 		for _, motor in ipairs(rLeg1:GetChildren()) do
 			if motor:IsA("Motor6D") then
 				motor.Name = "RLeg2"
+				break
 			end
 		end
 	end
@@ -151,15 +160,6 @@ local function resetState(playerName)
 	activeData[playerName] = nil
 end
 
-local function hideDescendants(container, hiddenSet)
-	for a, v in ipairs(container:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.Transparency = 1
-			hiddenSet[v]   = true
-		end
-	end
-end
-
 local function showDescendants(container)
 	for a, v in ipairs(container:GetDescendants()) do
 		if v:IsA("BasePart") then v.Transparency = 0 end
@@ -169,34 +169,29 @@ end
 local function applyToPlayer(playerName)
 	resetState(playerName)
 	
-	local playerModel = workspace:FindFirstChild("Players") and workspace.Players:FindFirstChild(playerName)
-	if not playerModel then return end
-	if playerModel:GetAttribute("Character") ~= "TailsDoll" then return end
+	local plrModel = workspace.Players:FindFirstChild(playerName)
+	if not plrModel then return end
 	
-	local playerObj = Players:FindFirstChild(playerName)
-	local standardChar = playerObj and playerObj.Character
-	local defaultFolder = playerModel:FindFirstChild("Default")
-	local source = defaultFolder or standardChar
+	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
+	
+	local source = plrModel:FindFirstChild("Default") or Players[playerName].Character
 	if not source then return end
 	
 	local hrp = source:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	
-	local hiddenSet = {}
-	hideDescendants(playerModel, hiddenSet)
-	if defaultFolder then
-		hideDescendants(defaultFolder, hiddenSet)
-	end
-	if standardChar and standardChar ~= source then
-		hideDescendants(standardChar, hiddenSet)
+	-- hide original visuals
+	for _, v in ipairs(plrModel:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Transparency = 1
+		end
 	end
 	
 	local descConn = nil
-	if defaultFolder then
-		descConn = defaultFolder.DescendantAdded:Connect(function(v)
+	if source then
+		descConn = source.DescendantAdded:Connect(function(v)
 			if v:IsA("BasePart") then
 				v.Transparency = 1
-				hiddenSet[v] = true
 			end
 		end)
 	end
@@ -205,25 +200,18 @@ local function applyToPlayer(playerName)
 	if not skinSource then return end
 	
 	local mdl = skinSource:Clone()
-	mdl.Parent = playerModel
+	mdl.Parent = plrModel
 	
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart")
-	if not newHrp then mdl:Destroy(); return end
+	if not newHrp then mdl:Destroy() return end
 	
-	for a, v in ipairs(mdl:GetDescendants()) do
-		if v:IsA("Humanoid") or v:IsA("Animator") then
+	for _, v in ipairs(mdl:GetDescendants()) do
+		if v:IsA("Humanoid") then
 			v:Destroy()
 		elseif v:IsA("BasePart") then
 			v.CanCollide = false
-			v.Anchored   = false
-		elseif v:IsA("Trail") or v:IsA("Beam") then
-			v.Enabled = false
 		end
 	end
-	
-	newHrp.Anchored		= true
-	newHrp.Transparency	= 1
-	newHrp.CFrame		= hrp.CFrame
 	
 	makeRough(mdl)
 	customizeEyes(mdl)
@@ -241,13 +229,6 @@ local function applyToPlayer(playerName)
 		if not playerModel.Parent then
 			resetState(playerName)
 			return
-		end
-		for part in pairs(hiddenSet) do
-			if part.Parent then
-				part.Transparency = 1
-			else
-				hiddenSet[part] = nil
-			end
 		end
 		if newHrp and hrp and newHrp.Parent and hrp.Parent then
 			newHrp.CFrame = hrp.CFrame
