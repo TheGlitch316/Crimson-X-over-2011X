@@ -1,105 +1,157 @@
-print("[Cream.LMS x TailsDoll] Now loading... Made by lil2kki <3")
+print("[Cream x TailsDoll] Now loading... Made by lil2kki <3")
 
-local function remapMotors(model)
-	local function find(name)
-		return model:FindFirstChild(name, true)
-	end
+local tar = game:GetService("ReplicatedStorage")
+tar = tar:FindFirstChild("Characters", true)
+tar = tar:FindFirstChild("TailsDoll", true)
+tar = tar:FindFirstChild("Skins", true)
 
-	local function rename(obj, newName)
-		if obj and obj.Name ~= newName then
-			obj.Name = newName
-		end
-	end
-
-	rename(find("waist"), "Waist")
-	rename(find("Body"), "MainBody")
-	rename(find("eye1"), "REye")
-	rename(find("eye2"), "LEye")
-	rename(find("Right Sleeve"), "RArm1")
-	rename(find("Cylinder.013"), "RArm2")
-	rename(find("Cylinder.014"), "RArm3")
-	rename(find("Cylinder.017"), "RArm4")
-	rename(find("Right Hand"), "RHand")
-	rename(find("Left Sleeve"), "LArm1")
-	rename(find("Cylinder.023"), "LArm2")
-	rename(find("Cylinder.022"), "LArm3")
-	rename(find("Left Hand"), "LHand")
-	rename(find("Right Leg"), "RLeg1")
-	rename(find("Cylinder.001"), "RLeg2")
-	rename(find("Cylinder"), "RLeg3")
-	rename(find("Right Shoe"), "RShoe")
-	rename(find("Left Leg"), "LLeg1")
-	rename(find("Cylinder.034"), "LLeg2")
-	rename(find("Cylinder.035"), "LLeg3")
-	rename(find("Left Shoe"), "LShoe")
-	rename(find("tail"), "RTail")
+local OLD_THERE_ALR = tar:FindFirstChild("_OLD", true)
+if OLD_THERE_ALR then
+    warn("OLD_THERE_ALR")
+    tar:FindFirstChild("Default", true):Destroy()
+    OLD_THERE_ALR.Name = "Default"
 end
 
-local _skinModelCache = nil
-local function getSkinModel()
-	if _skinModelCache and _skinModelCache.Parent then
-		return _skinModelCache
-	end
-	local chars = game:GetService("ReplicatedStorage"):FindFirstChild("Characters", true)
-	if not chars then return nil end
-	local result = chars:FindFirstChild("Survivors", true)
-	result = result and result:FindFirstChild("Cream", true)
-	result = result and result:FindFirstChild("Skins", true)
-	result = result and result:FindFirstChild("Default", true)
-	_skinModelCache = result
-	return result
+tar = tar:FindFirstChild("Default", true)
+
+local src = game:GetService("ReplicatedStorage")
+src = src:FindFirstChild("Characters", true)
+src = src:FindFirstChild("Cream", true)
+src = src:FindFirstChild("Skins", true)
+src = src:FindFirstChild("Default", true)
+
+if not tar or not src then
+    warn("models not found")
+    return
 end
 
-local function makeRough(model)
-	for a, part in ipairs(model:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.Material = (part.Material == Enum.Material.Fabric)
-				and Enum.Material.Carpet
-				or  Enum.Material.Sandstone
-		end
-	end
+-- clone cream
+local model = src:Clone()
+model.Name = tar.Name
+model.Parent = tar.Parent
+
+-- no humanoid
+for _,v in ipairs(model:GetDescendants()) do
+    if v:IsA("Humanoid") then v:Destroy() end
 end
 
-local function setupEye(eye, origSize)
-	eye.Material	= Enum.Material.Neon
-	eye.Size		= origSize / 1.2
-	task.spawn(function()
-		local sz = origSize / 1.2
-		while eye and eye.Parent do
-			eye.Color = Color3.new(math.random(70, 100) / 100, 0, 0)
-			eye.Size  = sz * (0.8 + math.random() * 0.2)
-			task.wait(math.random(3, 15) / 100)
-		end
-	end)
+local function find(name)
+    return model:FindFirstChild(name, true)
 end
 
-local function customizeEyes(model)
-	local whites = model:FindFirstChild("eyes", true)
-	if whites and whites:IsA("BasePart") then
-		whites.Color	= Color3.new(0, 0, 0)
-		whites.Material	= Enum.Material.SmoothPlastic
-	end
-	local eye1 = model:FindFirstChild("eye1", true)
-	local eye2 = model:FindFirstChild("eye2", true)
-	if eye1 then setupEye(eye1, eye1.Size) end
-	if eye2 then setupEye(eye2, eye2.Size) end
+-- make rough material
+for a, part in ipairs(model:GetDescendants()) do 
+    if part:IsA("BasePart") then
+        part.Material = (part.Material == Enum.Material.Fabric)
+            and Enum.Material.Carpet
+            or  Enum.Material.Sandstone
+    end
 end
 
-local function applyToPlayer(playerName)
+-- red dots :3
+local function setupEye(eye)
+    eye.Material = Enum.Material.Neon
+    local mesh = eye:FindFirstChildWhichIsA("SpecialMesh")
+    local base = mesh and mesh.Scale or eye.Size
+    task.spawn(function()
+        while eye.Parent do
+            eye.Color = Color3.fromRGB(math.random(180,255),0,0)
+            local s = 0.8 + math.random() * 0.25
+            if mesh then    mesh.Scale = base * s
+            else            eye.Size = base * s
+            end
+            task.wait(math.random(3,15)/100)
+        end
+    end)
+end
+local eye1 = find("eye1")
+local eye2 = find("eye2")
+if eye1 then setupEye(eye1) end
+if eye2 then setupEye(eye2) end
+
+-- eyes
+local eyes = model:FindFirstChild("eyes", true)
+if eyes and eyes:IsA("BasePart") then
+    eyes.Color      = Color3.new(0, 0, 0)
+    eyes.Material   = Enum.Material.SmoothPlastic
+end
+
+-- rename parts
+local function rename(obj, new)
+    if obj then
+        obj.Name = new
+    end
+end
+rename(find("waist"), "Waist")
+rename(find("Body"), "MainBody")
+
+rename(find("eye1"), "REye")
+rename(find("eye2"), "LEye")
+
+rename(find("Right Sleeve"), "RArm1")
+rename(find("Cylinder.013"), "RArm2")
+rename(find("Cylinder.014"), "RArm3")
+rename(find("Cylinder.017"), "RArm4")
+rename(find("Right Hand"), "RHand")
+
+rename(find("Left Sleeve"), "LArm1")
+rename(find("Cylinder.023"), "LArm2")
+rename(find("Cylinder.022"), "LArm3")
+rename(find("Left Hand"), "LHand")
+
+rename(find("Right Leg"), "RLeg1")
+rename(find("Cylinder.001"), "RLeg2")
+rename(find("Cylinder"), "RLeg3")
+rename(find("Right Shoe"), "RShoe")
+
+rename(find("Left Leg"), "LLeg1")
+rename(find("Cylinder.034"), "LLeg2")
+rename(find("Cylinder.035"), "LLeg3")
+rename(find("Left Shoe"), "LShoe")
+
+rename(find("tail"), "RTail")
+
+-- ae
+
+for _, obj in ipairs(tar:GetChildren()) do
+    local exists = model:FindFirstChild(obj.Name)
+    if not exists then
+        local cloned = obj:Clone()
+        cloned.Parent = model
+        if cloned:IsA("BasePart") then
+            cloned.Transparency = 1
+            cloned.LocalTransparencyModifier = 1
+            cloned.CFrame = CFrame.new(0, -99999, 0)
+        end
+    end
+end
+
+model.Name = "Default"
+model.Parent = tar.Parent
+
+tar.Name = "_OLD"
+
+--- FUCKING SERVER SIDED PLAYER BUILD HOLY HELL
+
+local function replaceCharacter(playerName)
+
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
-
+    
+    local src = game:GetService("ReplicatedStorage")
+    src = src:FindFirstChild("Characters", true)
+    src = src:FindFirstChild("TailsDoll", true)
+    src = src:FindFirstChild("Skins", true)
+    src = src:FindFirstChild("Default", true)
+    
 	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
 
-	local mdl = getSkinModel()
-	if not mdl then return end
-
-	mdl = mdl:Clone()
+    local mdl = src:Clone()
 	mdl.Parent = plrModel
-	
+
 	for _, v in ipairs(mdl:GetDescendants()) do
 		if v:IsA("Humanoid") then
 			v:Destroy()
@@ -111,11 +163,7 @@ local function applyToPlayer(playerName)
 
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
 	if not newHrp then mdl:Destroy() return end
-
-	makeRough(mdl)
-	customizeEyes(mdl)
-	remapMotors(mdl)
-
+    
     local toRestoreTransparency = {}
 	for _, part in ipairs(mdl:GetDescendants()) do
 		if part:IsA("BasePart") then
@@ -128,9 +176,9 @@ local function applyToPlayer(playerName)
 	local syncConn
 	syncConn = game:GetService("RunService").Heartbeat:Connect(function()
 		if not mdl or not mdl.Parent then
+			warn("Model destroyed, restarting rebuild")
 			syncConn:Disconnect()
-			warn("pizdec")
-			applyToPlayer(playerName)
+			replaceCharacter(playerName)
 			return
 		end
 		
@@ -140,30 +188,33 @@ local function applyToPlayer(playerName)
 			return
 		end
 		
-		--newHead.CFrame = head.CFrame
 		newHrp.CFrame = hrp.CFrame + hrpOffset
 
 		for _, v in ipairs(plrModel:GetDescendants()) do
-			if v:IsA("BasePart") then v.Transparency = 1 end
+			if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+				v.Transparency = 1 
+			end
 		end
-		for v, t in pairs(toRestoreTransparency) do v.Transparency = t end
+		
+		for v, t in pairs(toRestoreTransparency) do 
+            v.Transparency = t 
+        end
 	end)
+
+    return plrModel
 end
 
-local function onModelAdded(model)
-	if not model:IsA("Model") then return end
+workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
+	if newState ~= "ING" then return end
+
 	task.wait(1)
-    applyToPlayer(model.Name)
-	model.AttributeChanged:Connect(function(attr)
-		if attr == "Character" then
-			task.wait(1)
-			applyToPlayer(model.Name) 
-		end
-	end)
-end
 
-for _, model in ipairs(workspace.Players:GetChildren()) do onModelAdded(model) end
-workspace.Players.ChildAdded:Connect(onModelAdded)
+	for _, playerModel in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
+		if not playerModel:IsA("Model") then continue end
+		replaceCharacter(playerModel.Name)
+	end
+end)
+
 
 
 -- custom sounds..
@@ -222,3 +273,31 @@ game.DescendantAdded:Connect(function(desc)
         end
     end
 end)
+
+local HIT_SUNDS = {
+	"rbxassetid://97101227703333",
+	"rbxassetid://93465914238963",
+	"rbxassetid://113251186335660"
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CharacterFX").OnClientEvent:Connect(
+    function(action, target)
+        local name = tostring(target)
+        if action == "alertsurvivors" then
+            for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
+                if not model:IsA("Model") then continue end
+	            if model:GetAttribute("Character") ~= "TailsDoll" then continue end
+                local sound = Instance.new("Sound")
+                sound.Name = "TailsDollHit"
+                sound.SoundId = HIT_SUNDS[math.random(1, #HIT_SUNDS)]
+                sound.Volume = 1
+                sound.RollOffMaxDistance = 355
+                sound.RollOffMinDistance = 90
+                sound.SoundGroup = game.ReplicatedStorage.ClientAssets.Sounds.sfx
+                sound.Parent = model
+                sound:Play()
+                game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.5)
+            end
+        end
+    end
+)
