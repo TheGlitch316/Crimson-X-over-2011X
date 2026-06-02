@@ -246,7 +246,7 @@ local function loadCustomAsset(fileName)
 end
 
 local assigns = {
-    [80901931085615] = loadCustomAsset("NormalChase.mp3"),
+    [80901931085615] = loadCustomAsset("NormalChaseFix.mp3"),
     [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
     [112879248941055] = loadCustomAsset("LastLifeChase.mp3"),
 	
