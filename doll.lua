@@ -65,7 +65,7 @@ end
 
 -- rename parts
 local function rename(oldName, newName)
-	local obj = find(model, oldName)
+	local obj = find(oldName)
 	while obj do
 		-- print("renaming: "..obj.Name.." -> "..newName.." //"..obj.ClassName)
 		obj.Name = newName
