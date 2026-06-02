@@ -49,7 +49,7 @@ end
 local function setupEye(eye)
     eye.Material = Enum.Material.Neon
 	eye.Color = Color3.fromRGB(255,0,0)
-	eye.Size = 0.8
+	eye.Size = Vector3.new(0.8, 0.7, 0.8)
 end
 local eye1 = find("eye1")
 local eye2 = find("eye2")
