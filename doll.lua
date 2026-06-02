@@ -7,7 +7,7 @@ tar = tar:FindFirstChild("Skins", true)
 
 local OLD_THERE_ALR = tar:FindFirstChild("_OLD", true)
 if OLD_THERE_ALR then
-    warn("OLD_THERE_ALR")
+    warn("[Cream x TailsDoll] Restoring original skin")
     tar:FindFirstChild("Default", true):Destroy()
     OLD_THERE_ALR.Name = "Default"
 end
@@ -20,10 +20,7 @@ src = src:FindFirstChild("Cream", true)
 src = src:FindFirstChild("Skins", true)
 src = src:FindFirstChild("Default", true)
 
-if not tar or not src then
-    warn("models not found")
-    return
-end
+if not tar or not src then warn("models not found") return end
 
 -- clone cream
 local model = src:Clone()
@@ -51,18 +48,8 @@ end
 -- red dots :3
 local function setupEye(eye)
     eye.Material = Enum.Material.Neon
-    local mesh = eye:FindFirstChildWhichIsA("SpecialMesh")
-    local base = mesh and mesh.Scale or eye.Size
-    task.spawn(function()
-        while eye.Parent do
-            eye.Color = Color3.fromRGB(math.random(180,255),0,0)
-            local s = 0.8 + math.random() * 0.25
-            if mesh then    mesh.Scale = base * s
-            else            eye.Size = base * s
-            end
-            task.wait(math.random(3,15)/100)
-        end
-    end)
+	eye.Color = Color3.fromRGB(255,0,0)
+	eye.Size = 0.8
 end
 local eye1 = find("eye1")
 local eye2 = find("eye2")
@@ -77,42 +64,44 @@ if eyes and eyes:IsA("BasePart") then
 end
 
 -- rename parts
-local function rename(obj, new)
-    if obj then
-        obj.Name = new
-    end
+local function rename(oldName, newName)
+	local obj = find(model, oldName)
+	while obj do
+		-- print("renaming: "..obj.Name.." -> "..newName.." //"..obj.ClassName)
+		obj.Name = newName
+		obj = find(oldName)
+	end 
 end
-rename(find("waist"), "Waist")
-rename(find("Body"), "MainBody")
+rename("waist", "Waist")
+rename("Body", "MainBody")
 
-rename(find("eye1"), "REye")
-rename(find("eye2"), "LEye")
+rename("eye1", "REye")
+rename("eye2", "LEye")
 
-rename(find("Right Sleeve"), "RArm1")
-rename(find("Cylinder.013"), "RArm2")
-rename(find("Cylinder.014"), "RArm3")
-rename(find("Cylinder.017"), "RArm4")
-rename(find("Right Hand"), "RHand")
+rename("Right Sleeve", "RArm1")
+rename("Cylinder.013", "RArm2")
+rename("Cylinder.014", "RArm3")
+rename("Cylinder.017", "RArm4")
+rename("Right Hand", "RHand")
 
-rename(find("Left Sleeve"), "LArm1")
-rename(find("Cylinder.023"), "LArm2")
-rename(find("Cylinder.022"), "LArm3")
-rename(find("Left Hand"), "LHand")
+rename("Left Sleeve", "LArm1")
+rename("Cylinder.023", "LArm2")
+rename("Cylinder.022", "LArm3")
+rename("Left Hand", "LHand")
 
-rename(find("Right Leg"), "RLeg1")
-rename(find("Cylinder.001"), "RLeg2")
-rename(find("Cylinder"), "RLeg3")
-rename(find("Right Shoe"), "RShoe")
+rename("Right Leg", "RLeg1")
+rename("Cylinder.001", "RLeg2")
+rename("Cylinder", "RLeg3")
+rename("Right Shoe", "RShoe")
 
-rename(find("Left Leg"), "LLeg1")
-rename(find("Cylinder.034"), "LLeg2")
-rename(find("Cylinder.035"), "LLeg3")
-rename(find("Left Shoe"), "LShoe")
+rename("Left Leg", "LLeg1")
+rename("Cylinder.034", "LLeg2")
+rename("Cylinder.035", "LLeg3")
+rename("Left Shoe", "LShoe")
 
-rename(find("tail"), "RTail")
+rename("tail", "RTail")
 
 -- ae
-
 for _, obj in ipairs(tar:GetChildren()) do
     local exists = model:FindFirstChild(obj.Name)
     if not exists then
@@ -134,7 +123,6 @@ tar.Name = "_OLD"
 --- FUCKING SERVER SIDED PLAYER BUILD HOLY HELL
 
 local function replaceCharacter(playerName)
-
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
 
@@ -165,6 +153,7 @@ local function replaceCharacter(playerName)
 	if not newHrp then mdl:Destroy() return end
     
     local toRestoreTransparency = {}
+	setmetatable(toRestoreTransparency, {__mode = "k"})
 	for _, part in ipairs(mdl:GetDescendants()) do
 		if part:IsA("BasePart") then
 			toRestoreTransparency[part] = part.Transparency
@@ -173,17 +162,26 @@ local function replaceCharacter(playerName)
 
 	local hrpOffset = Vector3.new(0, -1, 0)
 
-	local syncConn
-	syncConn = game:GetService("RunService").Heartbeat:Connect(function()
+	_G.CreamOnTailsDollSkinUpdateConnection = _G.CreamOnTailsDollSkinUpdateConnection or nil
+    if _G.CreamOnTailsDollSkinUpdateConnection then
+        _G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
+        _G.CreamOnTailsDollSkinUpdateConnection = nil
+        print("[Cream x TailsDoll] Previous update connection destroyed")
+    end
+    _G.CreamOnTailsDollSkinUpdateConnection = game:GetService("RunService").Heartbeat:Connect(function()
 		if not mdl or not mdl.Parent then
-			warn("Model destroyed, restarting rebuild")
-			syncConn:Disconnect()
+			warn("[Cream x TailsDoll] Model destroyed, restarting overlay")
+			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
+        	_G.CreamOnTailsDollSkinUpdateConnection = nil
+        	table.clear(toRestoreTransparency)
 			replaceCharacter(playerName)
 			return
 		end
 		
 		if plrModel:GetAttribute("Character") ~= "TailsDoll" then
-			syncConn:Disconnect() 
+			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
+        	_G.CreamOnTailsDollSkinUpdateConnection = nil
+        	table.clear(toRestoreTransparency)
 			mdl:Destroy()
 			return
 		end
@@ -197,25 +195,34 @@ local function replaceCharacter(playerName)
 		end
 		
 		for v, t in pairs(toRestoreTransparency) do 
-            v.Transparency = t 
+            if v and v.Parent then v.Transparency = t end
         end
 	end)
 
     return plrModel
 end
 
-workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
-	if newState ~= "ING" then return end
+local function walkPlayers()
+    task.wait(1)
+    for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
+    	if not model:IsA("Model") then continue end
+    	if model:GetAttribute("Character") ~= "TailsDoll" then continue end
+    	replaceCharacter(model.Name)
+    end
+end
 
-	task.wait(1)
+walkPlayers()
 
-	for _, playerModel in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
-		if not playerModel:IsA("Model") then continue end
-		replaceCharacter(playerModel.Name)
-	end
+_G.CreamOnTailsDollSkinGameStateConnection = _G.CreamOnTailsDollSkinGameStateConnection or nil
+if _G.CreamOnTailsDollSkinGameStateConnection then
+	_G.CreamOnTailsDollSkinGameStateConnection:Disconnect()
+	_G.CreamOnTailsDollSkinGameStateConnection = nil
+	print("[Cream x TailsDoll] Previous game state connection destroyed")
+end
+_G.CreamOnTailsDollSkinGameStateConnection = workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
+    if newState ~= "ING" then return end
+	walkPlayers()
 end)
-
-
 
 -- custom sounds..
 local function loadCustomAsset(fileName)
@@ -233,7 +240,7 @@ local function loadCustomAsset(fileName)
         writefile(cachePath, result)
         return getcustomasset(cachePath)
     else
-        warn("failed to load " .. fileName)
+        warn("[Cream x TailsDoll] failed to load " .. fileName)
         return nil
     end
 end
@@ -259,28 +266,25 @@ local assigns = {
 
 game.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
-        task.wait(0.01)
+        task.wait(0.001)
         local soundId = desc.SoundId
         local id = tonumber(soundId:match("rbxassetid://(%d+)"))
-        if id and assigns[id] then
-            local newAsset = assigns[id]
-            desc.SoundId = newAsset
-            desc:GetPropertyChangedSignal("SoundId"):Connect(function()
-                if desc.SoundId ~= newAsset then
-                    desc.SoundId = newAsset
-                end
-            end)
-        end
+        if id and assigns[id] then desc.SoundId = assigns[id] end
     end
 end)
 
-local HIT_SUNDS = {
+local HIT_SOUNDS = {
 	"rbxassetid://97101227703333",
 	"rbxassetid://93465914238963",
 	"rbxassetid://113251186335660"
 }
-
-game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CharacterFX").OnClientEvent:Connect(
+_G.CreamOnTailsDollSkinCharacterFXConnection = _G.CreamOnTailsDollSkinCharacterFXConnection or nil
+if _G.CreamOnTailsDollSkinCharacterFXConnection then
+	_G.CreamOnTailsDollSkinCharacterFXConnection:Disconnect()
+	_G.CreamOnTailsDollSkinCharacterFXConnection = nil
+	print("[Cream x TailsDoll] Previous CharacterFX connection destroyed")
+end
+_G.CreamOnTailsDollSkinCharacterFXConnection = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CharacterFX").OnClientEvent:Connect(
     function(action, target)
         local name = tostring(target)
         if action == "alertsurvivors" then
@@ -289,10 +293,10 @@ game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Chara
 	            if model:GetAttribute("Character") ~= "TailsDoll" then continue end
                 local sound = Instance.new("Sound")
                 sound.Name = "TailsDollHit"
-                sound.SoundId = HIT_SUNDS[math.random(1, #HIT_SUNDS)]
+                sound.SoundId = HIT_SOUNDS[math.random(1, #HIT_SOUNDS)]
                 sound.Volume = 1
-                sound.RollOffMaxDistance = 355
-                sound.RollOffMinDistance = 90
+                sound.RollOffMaxDistance = 115
+                sound.RollOffMinDistance = 40
                 sound.SoundGroup = game.ReplicatedStorage.ClientAssets.Sounds.sfx
                 sound.Parent = model
                 sound:Play()
