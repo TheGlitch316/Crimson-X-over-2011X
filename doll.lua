@@ -260,7 +260,7 @@ end
 local assigns = {
     [80901931085615] = loadCustomAsset("NormalChaseFix.mp3"),
     [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
-    [112879248941055] = loadCustomAsset("LastLifeChaseNew.mp3"),
+    [112879248941055] = loadCustomAsset("LastLifeChaseNewV2.mp3"),
 	
     [112976135484851] = loadCustomAsset("Unleashed1.mp3"),
     [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
