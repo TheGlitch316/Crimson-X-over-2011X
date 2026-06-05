@@ -24,25 +24,21 @@ if not tar or not src then warn("models not found") return end
 
 -- clone cream
 local model = src:Clone()
+
 model.Name = tar.Name
 model.Parent = tar.Parent
 
--- no humanoid
-for _,v in ipairs(model:GetDescendants()) do
-    if v:IsA("Humanoid") then v:Destroy() end
+tar.Name = "_OLD"
+
+for _, v in ipairs(model:GetDescendants()) do
+    if v:IsA("BasePart") then
+        -- make rough material
+        v.Material = (v.Material == Enum.Material.Fabric) and Enum.Material.Carpet or Enum.Material.Sandstone
+    end
 end
 
 local function find(name)
     return model:FindFirstChild(name, true)
-end
-
--- make rough material
-for a, part in ipairs(model:GetDescendants()) do 
-    if part:IsA("BasePart") then
-        part.Material = (part.Material == Enum.Material.Fabric)
-            and Enum.Material.Carpet
-            or  Enum.Material.Sandstone
-    end
 end
 
 -- red dots :3
@@ -50,10 +46,6 @@ local function setupEye(eye)
     eye.Material = Enum.Material.Neon
 	eye.Color = Color3.fromRGB(255,0,0)
 	eye.Size = eye.Size / 1.3
-	
-	local decal = Instance.new("Decal")
-	decal.Texture = "rbxassetid://7372299365"
-	decal.Parent = eye
 end
 local eye1 = find("eye1")
 local eye2 = find("eye2")
@@ -113,25 +105,6 @@ if muzzle then
 	decal.Parent	= muzzle
 end
 
--- ae
-for _, obj in ipairs(tar:GetChildren()) do
-    local exists = model:FindFirstChild(obj.Name)
-    if not exists then
-        local cloned = obj:Clone()
-        cloned.Parent = model
-        if cloned:IsA("BasePart") then
-            cloned.Transparency = 1
-            cloned.LocalTransparencyModifier = 1
-            cloned.CFrame = CFrame.new(0, -99999, 0)
-        end
-    end
-end
-
-model.Name = "Default"
-model.Parent = tar.Parent
-
-tar.Name = "_OLD"
-
 --- FUCKING SERVER SIDED PLAYER BUILD HOLY HELL
 
 local function replaceCharacter(playerName)
@@ -140,36 +113,34 @@ local function replaceCharacter(playerName)
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
     
+	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
+	if not hrp then return end
+
+    for _, v in ipairs(plrModel:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+            if string.find(v.Name, "Claw") then v:Destroy() end
+            v.Transparency = 1
+        end
+    end
+    
     local src = game:GetService("ReplicatedStorage")
     src = src:FindFirstChild("Characters", true)
     src = src:FindFirstChild("TailsDoll", true)
     src = src:FindFirstChild("Skins", true)
     src = src:FindFirstChild("Default", true)
-    
-	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
-	if not hrp then return end
 
     local mdl = src:Clone()
 	mdl.Parent = plrModel
 
-	for _, v in ipairs(mdl:GetDescendants()) do
-		if v:IsA("Humanoid") then
-			v:Destroy()
-		elseif v:IsA("BasePart") then
-			v.CanCollide = false
-			v.Anchored = false
-		end
-	end
-
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
 	if not newHrp then mdl:Destroy() return end
-    
-    local toRestoreTransparency = {}
-	setmetatable(toRestoreTransparency, {__mode = "k"})
-	for _, part in ipairs(mdl:GetDescendants()) do
-		if part:IsA("BasePart") then
-			toRestoreTransparency[part] = part.Transparency
-		end
+
+	for _, v in ipairs(mdl:GetDescendants()) do
+		if v:IsA("Humanoid") then v:Destroy() end
+		if v:IsA("Animator") then v:Destroy() end
+        if v:IsA("BasePart") then
+            v.CanCollide = false
+        end
 	end
 
 	local hrpOffset = Vector3.new(0, -1, 0)
@@ -185,7 +156,6 @@ local function replaceCharacter(playerName)
 			warn("[Cream x TailsDoll] Model destroyed, restarting overlay")
 			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
         	_G.CreamOnTailsDollSkinUpdateConnection = nil
-        	table.clear(toRestoreTransparency)
 			replaceCharacter(playerName)
 			return
 		end
@@ -193,22 +163,11 @@ local function replaceCharacter(playerName)
 		if plrModel:GetAttribute("Character") ~= "TailsDoll" then
 			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
         	_G.CreamOnTailsDollSkinUpdateConnection = nil
-        	table.clear(toRestoreTransparency)
 			mdl:Destroy()
 			return
 		end
 		
 		newHrp.CFrame = hrp.CFrame + hrpOffset
-
-		for _, v in ipairs(plrModel:GetDescendants()) do
-			if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
-				v.Transparency = 1 
-			end
-		end
-		
-		for v, t in pairs(toRestoreTransparency) do 
-            if v and v.Parent then v.Transparency = t end
-        end
 	end)
 
     return plrModel
@@ -260,7 +219,7 @@ end
 local assigns = {
     [80901931085615] = loadCustomAsset("NormalChaseFix.mp3"),
     [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
-    [112879248941055] = loadCustomAsset("LastLifeChaseNewV2.mp3"),
+    [112879248941055] = loadCustomAsset("LastLifeChase3.mp3"),
 	
     [112976135484851] = loadCustomAsset("Unleashed1.mp3"),
     [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
@@ -276,12 +235,20 @@ local assigns = {
     [134998846301914] = "rbxassetid://77110140707717",  -- basic Swing
 }
 
-game.DescendantAdded:Connect(function(desc)
+_G.CreamOnTailsDollSkinDescendantAddedConnection = _G.CreamOnTailsDollSkinDescendantAddedConnection or nil
+if _G.CreamOnTailsDollSkinDescendantAddedConnection then
+	_G.CreamOnTailsDollSkinDescendantAddedConnection:Disconnect()
+	_G.CreamOnTailsDollSkinDescendantAddedConnection = nil
+	print("[Cream x TailsDoll] Previous DescendantAdded connection destroyed")
+end
+_G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
         task.wait(0.001)
-        local soundId = desc.SoundId
-        local id = tonumber(soundId:match("rbxassetid://(%d+)"))
+        local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
+        local group = "na"
+        if desc.SoundGroup then group = desc.SoundGroup.Name end
+        --print(desc.Name .. ": " .. desc.Volume .. ", at group " .. group)
     end
 end)
 
@@ -308,7 +275,7 @@ _G.CreamOnTailsDollSkinCharacterFXConnection = game:GetService("ReplicatedStorag
                 sound.SoundId = HIT_SOUNDS[math.random(1, #HIT_SOUNDS)]
                 sound.Volume = 1
                 sound.RollOffMaxDistance = 115
-                sound.RollOffMinDistance = 20
+                sound.RollOffMinDistance = 10
                 sound.SoundGroup = game.ReplicatedStorage.ClientAssets.Sounds.sfx
                 sound.Parent = model
                 sound:Play()
