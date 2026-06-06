@@ -1,60 +1,81 @@
 print("[Cream.LMS] Now loading... Made by lil2kki <3")
 
-local function makeRough(model)
-	for a, part in ipairs(model:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.Material = (part.Material == Enum.Material.Fabric)
-				and Enum.Material.Carpet
-				or  Enum.Material.Sandstone
-		end
-	end
-end
-
-local function setupEye(eye, origSize)
-	eye.Material	= Enum.Material.Neon
-	eye.Size		= origSize / 1.2
-	task.spawn(function()
-		local sz = origSize / 1.2
-		while eye and eye.Parent do
-			eye.Color = Color3.new(math.random(70, 100) / 100, 0, 0)
-			eye.Size  = sz * (0.8 + math.random() * 0.2)
-			task.wait(math.random(3, 15) / 100)
-		end
-	end)
-end
-
-local function customizeEyes(model)
-	local whites = model:FindFirstChild("eyes", true)
-	if whites and whites:IsA("BasePart") then
-		whites.Color	= Color3.new(0, 0, 0)
-		whites.Material	= Enum.Material.SmoothPlastic
-	end
-	local eye1 = model:FindFirstChild("eye1", true)
-	local eye2 = model:FindFirstChild("eye2", true)
-	if eye1 then setupEye(eye1, eye1.Size) end
-	if eye2 then setupEye(eye2, eye2.Size) end
-end
-
-local function applyToPlayer(model)
+local function applyToModel(model)
 	if not model then return end
-	if model:GetAttribute("Character") ~= "Cream" then return end
-	if model:GetAttribute("Cream.LMS_setupDone") then return end
-	makeRough(model)
-	customizeEyes(model)
-	model:SetAttribute("Cream.LMS_setupDone", true)
+    
+    for _, v in ipairs(model:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.Slate
+        end
+    end
+
+    local thatslikeevilandscary = game:GetObjects("rbxassetid://120086931957772")[1]
+    local eyeNames = {{"Eye1","eye1"}, {"Eye2","eye2"}}
+    for _, pair in ipairs(eyeNames) do
+        local srcPart = thatslikeevilandscary:FindFirstChild(pair[1], true)
+        local dstPart = model:FindFirstChild(pair[2], true)
+        if srcPart and dstPart then
+            dstPart.Material = Enum.Material.Neon
+            dstPart.Color = Color3.fromRGB(0,0,0)
+            dstPart.Transparency = 1
+            dstPart.Size = dstPart.Size / 3
+            for _, child in ipairs(srcPart:GetChildren()) do
+                if child:IsA("ParticleEmitter") or child:IsA("Attachment") then
+                    local existing = dstPart:FindFirstChild(child.Name)
+                    child.Parent = dstPart
+                    if child.Name == "YiSang" then child:Destroy() end
+                    if child.Name == "bubble" then 
+                        child.LightEmission = 1
+                        child.LightInfluence = 1
+                    end
+                end
+            end
+            srcPart.Part.ParticleEmitter.Parent = dstPart.Attachment
+            dstPart.Attachment.ParticleEmitter.LockedToPart = true
+        end
+    end
+    thatslikeevilandscary:Destroy()
+
+    local eyes = model:FindFirstChild("eyes", true)
+    if eyes and eyes:IsA("BasePart") then
+        eyes.Material = Enum.Material.Neon
+        eyes.Color = Color3.new(0, 0, 0)
+    end
+
+    local muzzle = model:FindFirstChild("muzzle", true)
+    local drip = game:GetObjects("rbxassetid://84762690015926")[1]
+    drip.Parent = muzzle
+    drip.UVScale = Vector2.new(1.5, 1)
+
+    local dress = model:FindFirstChild("dress", true)
+    dress.Material = Enum.Material.Sandstone
 end
 
-local function onModelAdded(model)
-	if not model:IsA("Model") then return end
-	task.wait(1)
-    applyToPlayer(model)
-	model.AttributeChanged:Connect(function(attr)
-		if attr == "Character" then
-			task.wait(1)
-			applyToPlayer(model) 
-		end
-	end)
+local src = game:GetService("ReplicatedStorage")
+src = src:FindFirstChild("Characters", true)
+src = src:FindFirstChild("Cream", true)
+src = src:FindFirstChild("Skins", true)
+src = src:FindFirstChild("Default", true)
+applyToModel(src)
+
+local function walkPlayers()
+    task.wait(1)
+    for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
+    	if not model:IsA("Model") then continue end
+    	if model:GetAttribute("Character") ~= "Cream" then continue end
+    	applyToModel(model)
+    end
 end
 
-for _, model in ipairs(workspace.Players:GetChildren()) do onModelAdded(model) end
-workspace.Players.ChildAdded:Connect(onModelAdded)
+walkPlayers()
+
+_G.CreamLMSSkinGameStateConnection = _G.CreamLMSSkinGameStateConnection or nil
+if _G.CreamLMSSkinGameStateConnection then
+	_G.CreamLMSSkinGameStateConnection:Disconnect()
+	_G.CreamLMSSkinGameStateConnection = nil
+	print("[Cream.LMS] Previous game state connection destroyed")
+end
+_G.CreamLMSSkinGameStateConnection = workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
+    if newState ~= "ING" then return end
+	walkPlayers()
+end)
