@@ -307,9 +307,13 @@ _G.CreamOnTailsDollSkinCharacterFXConnection = game:GetService("ReplicatedStorag
 
 -- stunned and downed voicelines
 
-if not _G.TailsDollVoicelinesGameStateConnection then loadstring(game:HttpGet(
+if not _G.TailsDollVoicelinesLoading then loadstring(game:HttpGet(
 	"https://raw.githubusercontent.com/thaLILNIKKI/my-outcome-memories/HEAD/tripwire-voice.lua"
 ))() end
+
+while not _G.TailsDollVoicelinesGameStateConnection do -- TailsDollVoicelinesGameStateConnection defined at end
+	task.wait(0.1)
+end
 
 _G.TailsDollVoicelinesCryAssets = {}
 for i = 1, 28 do table.insert(_G.TailsDollVoicelinesCryAssets, loadCustomAsset("Stun" .. i .. ".mp3")) end
