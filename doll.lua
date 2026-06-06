@@ -255,6 +255,12 @@ local assigns = {
     [134998846301914] = "rbxassetid://77110140707717",  -- basic Swing
 }
 
+local StunSounds = {}
+for i = 1, 28 do table.insert(StunSounds, loadCustomAsset("Stun" .. i .. ".mp3")) end
+
+local DownedSounds = {}
+for i = 1, 14 do table.insert(DownedSounds, loadCustomAsset("Down" .. i .. ".mp3")) end
+
 _G.CreamOnTailsDollSkinDescendantAddedConnection = _G.CreamOnTailsDollSkinDescendantAddedConnection or nil
 if _G.CreamOnTailsDollSkinDescendantAddedConnection then
 	_G.CreamOnTailsDollSkinDescendantAddedConnection:Disconnect()
@@ -264,59 +270,16 @@ end
 _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
         task.wait(0.001)
+
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
-        local group = "na"
-        if desc.SoundGroup then group = desc.SoundGroup.Name end
-        --print(desc.Name .. ": " .. desc.Volume .. ", at group " .. group)
-    end
-end)
 
-local HIT_SOUNDS = {
-	"rbxassetid://97101227703333",
-	"rbxassetid://93465914238963",
-	"rbxassetid://113251186335660"
-}
-_G.CreamOnTailsDollSkinCharacterFXConnection = _G.CreamOnTailsDollSkinCharacterFXConnection or nil
-if _G.CreamOnTailsDollSkinCharacterFXConnection then
-	_G.CreamOnTailsDollSkinCharacterFXConnection:Disconnect()
-	_G.CreamOnTailsDollSkinCharacterFXConnection = nil
-	print("[Cream x TailsDoll] Previous CharacterFX connection destroyed")
-end
-_G.CreamOnTailsDollSkinCharacterFXConnection = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CharacterFX").OnClientEvent:Connect(
-    function(action, target)
-        local name = tostring(target)
-        if action == "alertsurvivors" then
-            for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
-                if not model:IsA("Model") then continue end
-	            if model:GetAttribute("Character") ~= "TailsDoll" then continue end
-                local sound = Instance.new("Sound")
-                sound.Name = "TailsDollHit"
-                sound.SoundId = HIT_SOUNDS[math.random(1, #HIT_SOUNDS)]
-                sound.Volume = 1
-                sound.RollOffMaxDistance = 115
-                sound.RollOffMinDistance = 10
-                sound.SoundGroup = game.ReplicatedStorage.ClientAssets.Sounds.sfx
-                sound.Parent = model
-                sound:Play()
-                game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.5)
-            end
+        if str:find("HumanoidRootPart.") then
+            if not desc.Parent then return end
+            if not desc.Parent.Parent then return end
+            if desc.Parent.Parent:GetAttribute("Character") ~= "TailsDoll" then return end
+            if str:find(".Down") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
+            if str:find(".Stun") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
         end
     end
-)
-
--- stunned and downed voicelines
-
-if not _G.TailsDollVoicelinesLoading then loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/thaLILNIKKI/my-outcome-memories/HEAD/tripwire-voice.lua"
-))() end
-
-while not _G.TailsDollVoicelinesGameStateConnection do -- TailsDollVoicelinesGameStateConnection defined at end
-	task.wait(0.1)
-end
-
-_G.TailsDollVoicelinesCryAssets = {}
-for i = 1, 28 do table.insert(_G.TailsDollVoicelinesCryAssets, loadCustomAsset("Stun" .. i .. ".mp3")) end
-
-_G.TailsDollVoicelinesDowningAssets = {}
-for i = 1, 14 do table.insert(_G.TailsDollVoicelinesDowningAssets, loadCustomAsset("Down" .. i .. ".mp3")) end
+end)
