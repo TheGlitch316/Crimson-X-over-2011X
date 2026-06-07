@@ -141,8 +141,11 @@ local function replaceCharacter(playerName)
 	if not hrp then return end
 
     for _, v in ipairs(plrModel:GetDescendants()) do
-        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+            if string.find(v.Name, "Claw") then v:Destroy() end
+            v.Transparency = 1
             v.LocalTransparencyModifier = 1
+            
         end
         if v:IsA("ParticleEmitter") then v:Destroy() end -- soul diamond
         if v:IsA("PointLight") then v:Destroy() end -- soul diamond
