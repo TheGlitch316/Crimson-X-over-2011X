@@ -286,6 +286,11 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
             if path:find("Stun") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
             if path:find("Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
             if path:find("Down") or path:find("Line") or path:find("Stun") or path:find("Hurt") then
+                -- mute others to avoid word stack
+                for _, child in ipairs(_G.TailsDollModel:GetChildren()) do
+                    if not child:IsA("Sound") then continue end
+                    if child.Name:find("CreamSpeech") then child:Stop() end
+                end
                 -- fuck that, i just recreate my sound ehhh
                 local sound = Instance.new("Sound")
                 sound.Name = "CreamSpeech - " .. desc.SoundId
