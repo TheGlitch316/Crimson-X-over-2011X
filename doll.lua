@@ -194,10 +194,12 @@ local function replaceCharacter(playerName)
 end
 
 local function walkPlayers()
+    _G.TailsDollModel = nil
     task.wait(1)
     for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
     	if not model:IsA("Model") then continue end
     	if model:GetAttribute("Character") ~= "TailsDoll" then continue end
+        _G.TailsDollModel = model
     	replaceCharacter(model.Name)
     end
 end
@@ -269,10 +271,38 @@ if _G.CreamOnTailsDollSkinDescendantAddedConnection then
 end
 _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
+        _G.TailsDollVoicelinesPlayerModel = nil
         task.wait(0.001)
 
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
 
+		local path = desc:GetFullName()
+        -- print(path)
+        if path:find("HumanoidRootPart.") then
+            if not _G.TailsDollModel then return end
+            if path:find("Down") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
+            if path:find("Line") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
+            if path:find("Stun") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
+            if path:find("Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
+            if path:find("Down") or path:find("Line") or path:find("Stun") or path:find("Hurt") then
+                -- fuck that, i just recreate my sound ehhh
+                local sound = Instance.new("Sound")
+                sound.Name = "CreamSpeech - " .. desc.SoundId
+                sound.SoundId = desc.SoundId
+                sound.Volume = desc.Volume
+                sound.RollOffMaxDistance = desc.RollOffMaxDistance
+                sound.RollOffMinDistance = desc.RollOffMinDistance
+                sound.SoundGroup = game.ReplicatedStorage.ClientAssets.Sounds.sfx
+                sound.Parent = _G.TailsDollModel --desc.Parent
+                sound:Play()
+                task.wait(0.01)
+                game:GetService("Debris"):AddItem(sound, 10)
+                -- die
+                desc.Volume = 0
+                desc:Stop()
+            end
+        end
     end
 end)
+
