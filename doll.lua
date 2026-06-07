@@ -55,9 +55,14 @@ for _, pair in ipairs(eyeNames) do
             if child:IsA("ParticleEmitter") or child:IsA("Attachment") then
                 child.Parent = dstPart
                 if child.Name == "YiSang" then child:Destroy() end
+            end
+        end
+        for _, child in ipairs(dstPart:GetDescendants()) do
+            if child:IsA("ParticleEmitter") then
+                child.LockedToPart = true
                 if child.Name == "bubble" then 
-                    child.LightEmission = 1
-                    child.LightInfluence = 1
+                    child.LightEmission = 0.1
+                    child.LightInfluence = 0.1
                 end
             end
         end
