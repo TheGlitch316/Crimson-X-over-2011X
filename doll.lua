@@ -140,7 +140,10 @@ local function replaceCharacter(playerName)
 	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
 
+	local ogHead = plrModel:FindFirstChildOfClass("Motor6D", true)
+
     for _, v in ipairs(plrModel:GetDescendants()) do
+        if v:IsA("Motor6D") and v.Name == "Head" then ogHead = v end
         if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
             if string.find(v.Name, "Claw") then v:Destroy() end
             v.Transparency = 1
@@ -163,7 +166,10 @@ local function replaceCharacter(playerName)
 	local newHrp = mdl:FindFirstChild("HumanoidRootPart", true)
 	if not newHrp then mdl:Destroy() return end
 
+	local myHead = mdl:FindFirstChildOfClass("Motor6D", true)
+
 	for _, v in ipairs(mdl:GetDescendants()) do
+        if v:IsA("Motor6D") and v.Name == "Head" then myHead = v end
 		if v:IsA("Humanoid") then v:Destroy() end
 		if v:IsA("Animator") then v:Destroy() end
         if v:IsA("BasePart") then
@@ -172,6 +178,9 @@ local function replaceCharacter(playerName)
 	end
 
 	local hrpOffset = Vector3.new(0, -1, 0)
+
+    --print(ogHead:GetFullName())
+    --print(myHead:GetFullName())
 
 	_G.CreamOnTailsDollSkinUpdateConnection = _G.CreamOnTailsDollSkinUpdateConnection or nil
     if _G.CreamOnTailsDollSkinUpdateConnection then
@@ -196,6 +205,7 @@ local function replaceCharacter(playerName)
 		end
 		
 		newHrp.CFrame = hrp.CFrame + hrpOffset
+        myHead.C0 = ogHead.C0
 	end)
 
     return plrModel
@@ -334,8 +344,8 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
                 sound.SoundGroup = desc.SoundGroup
                 sound.Parent = _G.TailsDollModel.Waist
                 sound:Play()
-                task.wait(0.01)
-                game:GetService("Debris"):AddItem(sound, 10)
+                sound.Loaded:Wait()
+                game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.5)
                 -- die
                 desc.Volume = 0
                 desc:Stop()
