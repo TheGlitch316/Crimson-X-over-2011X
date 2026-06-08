@@ -229,7 +229,7 @@ print("[Cream x TailsDoll] Players scanned, game state being listened.")
 
 -- custom sounds..
 print("[Cream x TailsDoll] Loading custom sounds...")
-local function loadCustomAsset(fileName)
+local function myAsset(fileName)
     local cachePath = "cache/cream-on-doll/" .. fileName
     if isfile(cachePath) then return getcustomasset(cachePath) end
     local success, result = pcall(
@@ -250,14 +250,14 @@ local function loadCustomAsset(fileName)
 end
 
 local assigns = {
-    [80901931085615] = loadCustomAsset("NormalChaseFix.mp3"),
-    [129416111545242] = loadCustomAsset("TerrorRadius.mp3"),
-    [112879248941055] = loadCustomAsset("LastLifeChase3.mp3"),
+    [80901931085615] = myAsset("NormalChaseFix.mp3"),
+    [129416111545242] = myAsset("TerrorRadius.mp3"),
+    [112879248941055] = myAsset("LastLifeChase3.mp3"),
 	
-    [112976135484851] = loadCustomAsset("Unleashed1.mp3"),
-    [106071428647005]  = loadCustomAsset("Unleashed2.mp3"),
-    [87302988643016]  = loadCustomAsset("Unleashed3.mp3"),
-    [131820864449998] = loadCustomAsset("Retract.mp3"), -- giggle or smth here ~
+    [112976135484851] = myAsset("Unleashed1.mp3"),
+    [106071428647005]  = myAsset("Unleashed2.mp3"),
+    [87302988643016]  = myAsset("Unleashed3.mp3"),
+    [131820864449998] = myAsset("Retract.mp3"), -- giggle or smth here ~
 
 	[97101227703333] = "rbxassetid://139116822099909",  -- .Hit1]  2011x Hit2
 	[93465914238963] = "rbxassetid://88164444698409",  -- Lilith.Hit2] 
@@ -269,21 +269,21 @@ local assigns = {
 }
 
 local StunSounds = {}
-for i = 1, 28 do table.insert(StunSounds, loadCustomAsset("Stun" .. i .. ".mp3")) end
+for i = 1, 28 do table.insert(StunSounds, myAsset("Stun" .. i .. ".mp3")) end
 
 local DownedSounds = {}
-for i = 1, 14 do table.insert(DownedSounds, loadCustomAsset("Down" .. i .. ".mp3")) end
+for i = 1, 14 do table.insert(DownedSounds, myAsset("Down" .. i .. ".mp3")) end
 
 local KillLines = {
-    ["Sonic"] = loadCustomAsset("Sonic.mp3"),
-    ["Tails"] = loadCustomAsset("Tails.mp3"),
-    ["MetalSonic"] = loadCustomAsset("MetalSonic.mp3"),
-    ["Amy"] = loadCustomAsset("Amy.mp3"),
-    ["Silver"] = loadCustomAsset("Silver.mp3"),
-    ["Blaze"] = loadCustomAsset("Blaze.mp3"),
-    ["Eggman"] = loadCustomAsset("Eggman.mp3"),
-    ["Cream"] = loadCustomAsset("Cream.mp3"),
-    ["Knuckles"] = loadCustomAsset("Knuckles.mp3")
+    ["Sonic"] = { myAsset("Sonic.mp3"), myAsset("Sonic2.mp3") }
+    ["Tails"] = { myAsset("Tails.mp3"),  myAsset("Tails2.mp3"),  myAsset("Tails3.mp3") },
+    ["MetalSonic"] = { myAsset("MetalSonic.mp3"),  myAsset("MetalSonic2.mp3") },
+    ["Amy"] = { myAsset("Amy.mp3"),  myAsset("Amy2.mp3"),  myAsset("Amy3.mp3"),  myAsset("Amy4.mp3") },
+    ["Silver"] = { myAsset("Silver.mp3") },
+    ["Blaze"] = { myAsset("Blaze.mp3") },
+    ["Eggman"] = { myAsset("Eggman.mp3") },
+    ["Cream"] = { myAsset("Cream.mp3"),  myAsset("Cream2.mp3") },
+    ["Knuckles"] = { myAsset("Knuckles.mp3") }
 }
 
 print("[Cream x TailsDoll] Finished downloading custom sounds...")
@@ -303,7 +303,7 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
         if id and assigns[id] then desc.SoundId = assigns[id] end
 
 		local path = desc:GetFullName()
-        print(path)
+        -- print(path)
         if path:find("HumanoidRootPart.") then
             if not _G.TailsDollModel then return end
             if path:find(".Blood Hit") then _G.PlayerHurtByTailsDollLately = desc.Parent.Parent end
@@ -319,8 +319,11 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
                 end
                 -- kill lines
                 if path:find("Line") and _G.PlayerHurtByTailsDollLately then
-                    local chara = _G.PlayerHurtByTailsDollLately:GetAttribute("Character")
-                    if KillLines[chara] then desc.SoundId = KillLines[chara] end
+                    local c = _G.PlayerHurtByTailsDollLately:GetAttribute("Character")
+                    if KillLines[c] and #KillLines[c] > 0 then 
+                        desc.SoundId = KillLines[c][math.random(1, #KillLines[c])] 
+                        _G.PlayerHurtByTailsDollLately = nil
+                    end
                 end
                 -- fuck that, i just recreate my sound ehhh
                 local sound = Instance.new("Sound")
