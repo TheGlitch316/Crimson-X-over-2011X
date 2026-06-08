@@ -131,11 +131,13 @@ print("[Cream x TailsDoll] Model setup done...")
 
 --- FUCKING SERVER SIDED PLAYER BUILD HOLY HELL
 
-local function replaceCharacter(playerName)
+local function updatePlayerModel(playerName)
 	local plrModel = workspace.Players:FindFirstChild(playerName)
 	if not plrModel then return end
 
 	if plrModel:GetAttribute("Character") ~= "TailsDoll" then return end
+
+    print("[Cream x TailsDoll] Updating model for " .. plrModel.Name .. "...")
     
 	local hrp = plrModel:FindFirstChild("HumanoidRootPart", true)
 	if not hrp then return end
@@ -193,7 +195,7 @@ local function replaceCharacter(playerName)
 			warn("[Cream x TailsDoll] Model destroyed, restarting overlay")
 			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
         	_G.CreamOnTailsDollSkinUpdateConnection = nil
-			replaceCharacter(playerName)
+			updatePlayerModel(playerName)
 			return
 		end
 		
@@ -211,31 +213,49 @@ local function replaceCharacter(playerName)
     return plrModel
 end
 
+local function tryUpdatePlayerModel(model)
+    if model:GetAttribute("Character") ~= "TailsDoll" then return end
+    _G.TailsDollModel = model
+    updatePlayerModel(model.Name)
+end
+
 local function walkPlayers()
     _G.TailsDollModel = nil
     task.wait(1)
-    for _, model in ipairs(workspace:WaitForChild("Players"):GetChildren()) do
+    for _, model in ipairs(workspace.Players:GetChildren()) do
     	if not model:IsA("Model") then continue end
-    	if model:GetAttribute("Character") ~= "TailsDoll" then continue end
-        _G.TailsDollModel = model
-    	replaceCharacter(model.Name)
+    	if model.Name == game.Players.LocalPlayer.Name then continue end
+        tryUpdatePlayerModel(model)
     end
 end
+    _G.CreamOnTailsDollSkinGameStateConn = _G.CreamOnTailsDollSkinGameStateConn or nil
+    if _G.CreamOnTailsDollSkinGameStateConn then
+        _G.CreamOnTailsDollSkinGameStateConn:Disconnect()
+        _G.CreamOnTailsDollSkinGameStateConn = nil
+        print("[Cream x TailsDoll] Previous game state connection destroyed")
+    end
+    _G.CreamOnTailsDollSkinGameStateConn = workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
+        if newState ~= "ING" then return end
+        walkPlayers()
+    end)
+    walkPlayers()
+--
 
-walkPlayers()
+-- CharacterConn
+    _G.CreamOnTailsDollSkinCharacterConn = _G.CreamOnTailsDollSkinCharacterConn or nil
+    if _G.CreamOnTailsDollSkinCharacterConn then
+        _G.CreamOnTailsDollSkinCharacterConn:Disconnect()
+        _G.CreamOnTailsDollSkinCharacterConn = nil
+        print("[Cream x TailsDoll] Previous game сharacter added connection destroyed")
+    end
+    _G.CreamOnTailsDollSkinCharacterConn = game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+        task.wait(3)
+        tryUpdatePlayerModel(character)
+    end)
+    tryUpdatePlayerModel(game.Players.LocalPlayer.Character)
+--
 
-_G.CreamOnTailsDollSkinGameStateConnection = _G.CreamOnTailsDollSkinGameStateConnection or nil
-if _G.CreamOnTailsDollSkinGameStateConnection then
-	_G.CreamOnTailsDollSkinGameStateConnection:Disconnect()
-	_G.CreamOnTailsDollSkinGameStateConnection = nil
-	print("[Cream x TailsDoll] Previous game state connection destroyed")
-end
-_G.CreamOnTailsDollSkinGameStateConnection = workspace:WaitForChild("GameProperties"):WaitForChild("State").Changed:Connect(function(newState)
-    if newState ~= "ING" then return end
-	walkPlayers()
-end)
-
-print("[Cream x TailsDoll] Players scanned, game state being listened.")
+print("[Cream x TailsDoll] Players scanned, game state and your char being listened.")
 
 -- custom sounds..
 print("[Cream x TailsDoll] Loading custom sounds...")
@@ -305,14 +325,28 @@ if _G.CreamOnTailsDollSkinDescendantAddedConnection then
 	print("[Cream x TailsDoll] Previous DescendantAdded connection destroyed")
 end
 _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(function(desc)
+    local path = desc:GetFullName()
+    if desc:IsA("TextLabel") and not path:find("CoreGui.") and not path:find("skibidi board") then
+        task.wait(0.001)
+        -- print(" '" .. desc.Text .. "' at " .. desc:GetFullName())
+        local updating = false
+        local function update()
+            if updating then return end
+            if desc.Text:find("TailsDoll2") then return end
+            updating = true
+            if desc.Text == "Tripwire" then desc.Text = " [CORRUPTED] " end
+            if desc.Text == "TailsDoll" then desc.Text = "TailsDoll2" end
+            updating = false
+        end
+        update()
+        desc:GetPropertyChangedSignal("Text"):Connect(update)
+    end
     if desc:IsA("Sound") then
-        _G.TailsDollVoicelinesPlayerModel = nil
         task.wait(0.001)
 
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
 
-		local path = desc:GetFullName()
         -- print(path)
         if path:find("HumanoidRootPart.") then
             if not _G.TailsDollModel then return end
