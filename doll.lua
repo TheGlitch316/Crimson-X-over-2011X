@@ -325,8 +325,9 @@ if _G.CreamOnTailsDollSkinDescendantAddedConnection then
 	print("[Cream x TailsDoll] Previous DescendantAdded connection destroyed")
 end
 _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(function(desc)
-    local path = desc:GetFullName()
-    if desc:IsA("TextLabel") and not path:find("CoreGui.") and not path:find("skibidi board") then
+    if desc:IsA("TextLabel") then
+        local path = desc:GetFullName()
+        if path:find("CoreGui.") or path:find("skibidi board") then return end
         task.wait(0.001)
         -- print(" '" .. desc.Text .. "' at " .. desc:GetFullName())
         local updating = false
@@ -335,8 +336,18 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
             if desc.Text:find("TailsDoll2") then return end
             updating = true
             if desc.Text == "Tripwire" then desc.Text = " [CORRUPTED] " end
-            if desc.Text == "TailsDoll" then desc.Text = "TailsDoll2" end
-            if desc.Text == "Can you feel the sunshine?" then desc.Text = "Successful copy.\nWARN: ReplicatedStorage missmatch!" end
+            if desc.Text == "TailsDoll" then desc.Text = "TailsDoll (2)" end
+            if desc.Text == "Can you feel the sunshine?" then 
+                desc.TextWrapped = false
+                desc.Font = Enum.Font.Code
+                desc.TextColor3 = Color3.new(0.98, 0.98, 0.98)
+                desc.TextXAlignment = Enum.TextXAlignment.Left
+                desc.Text = "[Info] Instance copied successfully.\n"
+                          .."[WARN] ReplicatedStorage missmatch!\n"
+                          .."[WARN] Unauthorized access!\n"
+                          .."> dont worry, thats just a way i can play :>\n"
+                          .."Syntax error."
+            end
             updating = false
         end
         update()
@@ -348,25 +359,48 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
 
-        -- print(path)
+        local path = desc:GetFullName()
+
+        -- if path:find("asd") or path:find("asd") then return end
+
         if path:find("HumanoidRootPart.") then
+            -- print(path)
             if not _G.TailsDollModel then return end
-            if path:find(".Blood Hit") then _G.PlayerHurtByTailsDollLately = desc.Parent.Parent end
-            if path:find("Down") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
-            if path:find("Line") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
-            if path:find("Stun") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
-            if path:find("Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
-            if path:find("Down") or path:find("Line") or path:find("Stun") or path:find("Hurt") then
+
+            if (desc.Name:find("Retract") or desc.Name:find("Unleashed")) and _G.TailsDollModel.Waist:FindFirstChildOfClass("Sound") then
+                desc.RollOffMaxDistance = desc.RollOffMaxDistance * 4
+                desc.RollOffMinDistance = desc.RollOffMinDistance * 2
+                desc.Volume = 1
+                for _, child in ipairs(_G.TailsDollModel.Waist:GetChildren()) do
+                    if child.Name:find("CreamSpeech") then 
+                        desc.Volume = 0
+                        desc:Stop()
+                    end
+                end
+            end
+
+            local player = desc.Parent.Parent
+            if player:GetAttribute("Character") ~= "TailsDoll" then
+                if path:find(".Blood Hit") then _G.LastHurtenPlayer = player end
+                return 
+            end
+
+            local isDefLine = (path:find("Line") and path:find(".Default"))
+
+            if isDefLine or path:find(".Downed") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
+            if path:find(".Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
+
+            if isDefLine or path:find(".Downed") or path:find(".Hurt") then
                 -- mute others to avoid word stack
                 for _, child in ipairs(_G.TailsDollModel.Waist:GetChildren()) do
                     if child.Name:find("CreamSpeech") then child:Stop() end
                 end
                 -- kill lines
-                if path:find("Line") and _G.PlayerHurtByTailsDollLately then
-                    local c = _G.PlayerHurtByTailsDollLately:GetAttribute("Character")
+                if isDefLine and _G.LastHurtenPlayer then
+                    local c = _G.LastHurtenPlayer:GetAttribute("Character")
                     if KillLines[c] then 
                         desc.SoundId = KillLines[c][math.random(1, #KillLines[c])]
-                        _G.PlayerHurtByTailsDollLately = nil
+                        _G.LastHurtenPlayer = nil
                     end
                 end
                 -- fuck that, i just recreate my sound ehhh
@@ -384,17 +418,6 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
                 -- die
                 desc.Volume = 0
                 desc:Stop()
-            end
-            if (desc.Name:find("Retract") or desc.Name:find("Unleashed")) and _G.TailsDollModel.Waist:FindFirstChildOfClass("Sound") then
-                desc.RollOffMaxDistance = desc.RollOffMaxDistance * 4
-                desc.RollOffMinDistance = desc.RollOffMinDistance * 2
-                desc.Volume = 1
-                for _, child in ipairs(_G.TailsDollModel.Waist:GetChildren()) do
-                    if child.Name:find("CreamSpeech") then 
-                        desc.Volume = 0
-                        desc:Stop()
-                    end
-                end
             end
         end
     end
