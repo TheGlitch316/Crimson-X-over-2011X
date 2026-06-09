@@ -208,6 +208,8 @@ local function updatePlayerModel(playerName)
 		
 		newHrp.CFrame = hrp.CFrame + hrpOffset
         myHead.C0 = ogHead.C0
+        
+        if plrModel.Health then plrModel.Health.Value = math.random(1, 100) end
 	end)
 
     return plrModel
@@ -249,6 +251,12 @@ end
         print("[Cream x TailsDoll] Previous game сharacter added connection destroyed")
     end
     _G.CreamOnTailsDollSkinCharacterConn = game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+	    if character:GetAttribute("Character") ~= "TailsDoll" then return end
+        
+        local healthxd = Instance.new("NumberValue")
+        healthxd.Name = "Health"
+        healthxd.Parent = character
+
         task.wait(3)
         tryUpdatePlayerModel(character)
     end)
@@ -304,6 +312,9 @@ for i = 1, 28 do table.insert(StunSounds, myAsset("Stun" .. i .. ".mp3")) end
 local DownedSounds = {}
 for i = 1, 14 do table.insert(DownedSounds, myAsset("Down" .. i .. ".mp3")) end
 
+local AttackSounds = {}
+for i = 1, 8 do table.insert(AttackSounds, myAsset("Attack" .. i .. ".mp3")) end
+
 local KillLines = {
     ["Sonic"] = { myAsset("Sonic.mp3"), myAsset("Sonic2.mp3") },
     ["Tails"] = { myAsset("Tails.mp3"),  myAsset("Tails2.mp3"),  myAsset("Tails3.mp3") },
@@ -354,7 +365,6 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
         desc:GetPropertyChangedSignal("Text"):Connect(update)
     end
     if desc:IsA("Sound") then
-        task.wait(0.001)
 
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
         if id and assigns[id] then desc.SoundId = assigns[id] end
@@ -383,6 +393,13 @@ _G.CreamOnTailsDollSkinDescendantAddedConnection = game.DescendantAdded:Connect(
             if player:GetAttribute("Character") ~= "TailsDoll" then
                 if path:find(".Blood Hit") then _G.LastHurtenPlayer = player end
                 return 
+            end
+
+            if desc.SoundId == "rbxassetid://77110140707717" then
+                local clone = desc:Clone()
+                clone.SoundId = AttackSounds[math.random(1, #AttackSounds)]
+                clone.Parent = desc.Parent
+                clone:Play()
             end
 
             local isDefLine = (path:find("Line") and path:find(".Default"))
