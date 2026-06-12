@@ -376,7 +376,7 @@ if _G.CreamOnTailsDollSkinSoundConn then
 	_G.CreamOnTailsDollSkinSoundConn = nil
 	print("[Cream x TailsDoll] Previous sound desc conn destroyed")
 end
-_G.CreamOnTailsDollSkinSoundConn = workspace.Players.DescendantAdded:Connect(function(desc)
+_G.CreamOnTailsDollSkinSoundConn = workspace.DescendantAdded:Connect(function(desc)
     if desc:IsA("Sound") then
 
         local id = tonumber(desc.SoundId:match("rbxassetid://(%d+)"))
