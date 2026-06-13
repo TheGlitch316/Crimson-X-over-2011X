@@ -272,6 +272,30 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
 
 -- CUSTOM TEXT
 
+    local updatingTextLabel = false
+    local function replTextLabel(label)
+        if updatingTextLabel then return end
+        if label.Text:find("TailsDoll (2)") then return end
+        updatingTextLabel = true
+        if label.Text == "S.T.E.P." then label.Text = "FUN" end
+        if label.Text == "Reach Out" then label.Text = " Tag ~" end
+        if label.Text == "Brighter Day" then label.Text = "Laser thingy" end
+        if label.Text == "Tripwire" then label.Text = " [CORRUPTED] " end
+        if label.Text == "TailsDoll" then label.Text = "TailsDoll (2)" end
+        if label.Text == "Can you feel the sunshine?" then 
+            -- label.TextWrapped = false
+            -- label.Font = Enum.Font.Code
+            -- label.TextColor3 = Color3.new(0.98, 0.98, 0.98)
+            -- label.TextXAlignment = Enum.TextXAlignment.Left
+            label.Text = "[Info] Instance copied successfully.\n"
+                    .."[WARN] ReplicatedStorage missmatch!\n"
+                    .."[WARN] Unauthorized access!\n"
+                    .."> dont worry, thats just a way i can play :>\n"
+                    .."Syntax error."
+        end
+        updatingTextLabel = false
+    end
+
     _G.CreamOnTailsDollGUIConn = _G.CreamOnTailsDollGUIConn or nil
     if _G.CreamOnTailsDollGUIConn then
         _G.CreamOnTailsDollGUIConn:Disconnect()
@@ -284,36 +308,25 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
             if path:find("CoreGui.") or path:find("skibidi board") then return end
             task.wait(0.001)
             ---print(" '" .. desc.Text .. "' at " .. desc:GetFullName())
-            local updating = false
-            local function repl(label)
-                if updating then return end
-                if desc.Text:find("TailsDoll (2)") then return end
-                updating = true
-                if desc.Text == "S.T.E.P." then desc.Text = "FUN" end
-                if desc.Text == "Reach Out" then desc.Text = "Tag ~" end
-                if desc.Text == "Brighter Day" then desc.Text = "Laser thingy" end
-                if desc.Text == "Tripwire" then desc.Text = " [CORRUPTED] " end
-                if desc.Text == "TailsDoll" then desc.Text = "TailsDoll (2)" end
-                if desc.Text == "Can you feel the sunshine?" then 
-                    -- desc.TextWrapped = false
-                    -- desc.Font = Enum.Font.Code
-                    -- desc.TextColor3 = Color3.new(0.98, 0.98, 0.98)
-                    -- desc.TextXAlignment = Enum.TextXAlignment.Left
-                    desc.Text = "[Info] Instance copied successfully.\n"
-                            .."[WARN] ReplicatedStorage missmatch!\n"
-                            .."[WARN] Unauthorized access!\n"
-                            .."> dont worry, thats just a way i can play :>\n"
-                            .."Syntax error."
-                end
-                updating = false
-            end
-            repl(desc)
+            replTextLabel(desc)
             local conn = desc:GetPropertyChangedSignal("Text"):Connect(function()
                 if not desc then conn:Disconnect() return end
-                repl(desc)
+                replTextLabel(desc)
             end)
         end
     end)
+    for _, desc in ipairs(game:GetService("Players").LocalPlayer.PlayerGui:GetDescendants()) do
+        if desc:IsA("TextLabel") then
+            local path = desc:GetFullName()
+            if path:find("CoreGui.") or path:find("skibidi board") then return end
+            ---print(" '" .. desc.Text .. "' at " .. desc:GetFullName())
+            replTextLabel(desc)
+            local conn = desc:GetPropertyChangedSignal("Text"):Connect(function()
+                if not desc then conn:Disconnect() return end
+                replTextLabel(desc)
+            end)
+        end
+    end
     print("[Cream x TailsDoll] Listening for your GUI...")
 
 -- CUSTOM SOUNDS
