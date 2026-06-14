@@ -83,6 +83,8 @@ local function rename(oldName, newName)
 	while obj do
 		-- print("renaming: "..obj.Name.." -> "..newName.." //"..obj.ClassName)
 		obj.Name = newName
+        obj:SetAttribute("rename_oldName", oldName)
+        obj:SetAttribute("rename_newName", newName)
 		obj = find(oldName)
 	end 
 end
@@ -179,7 +181,19 @@ local function updatePlayerModel(playerName)
         end
 	end
 
-	local hrpOffset = Vector3.new(0, -1, 0)
+    -- glide anim lol
+	if not plrModel:GetAttribute("Glide anim was replaced") then
+	    local oldanim = plrModel.Glide.ANIMS.Glide or plrModel.Glide.ANIMS.Glide_OLD
+	    oldanim.Name = oldanim.Name .. "_OLD"
+	    local newanim = game:GetService("ReplicatedStorage"):FindFirstChild("Characters", true):FindFirstChild("Cream", true):FindFirstChild("Glide", true):Clone()
+	    newanim.Parent = oldanim.Parent
+	
+	    plrModel.Glide.Enabled = false
+	    task.wait()
+	    plrModel.Glide.Enabled = true
+		
+	    plrModel:SetAttribute("Glide anim was replaced", true)
+	end
 
     --print(ogHead:GetFullName())
     --print(myHead:GetFullName())
@@ -187,31 +201,30 @@ local function updatePlayerModel(playerName)
     -- local Mines = plrModel:FindFirstChild("Mines")
     -- local Dodges = plrModel:FindFirstChild("Dodges")
 
-	_G.CreamOnTailsDollSkinUpdateConnection = _G.CreamOnTailsDollSkinUpdateConnection or nil
-    if _G.CreamOnTailsDollSkinUpdateConnection then
-        _G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
-        _G.CreamOnTailsDollSkinUpdateConnection = nil
-        print("[Cream x TailsDoll] Previous update connection destroyed")
-    end
-    _G.CreamOnTailsDollSkinUpdateConnection = game:GetService("RunService").Heartbeat:Connect(function()
+    _G.CreamOnTailsDollSkinHeartbeatConnections = _G.CreamOnTailsDollSkinHeartbeatConnections or {}
+	_G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name] = game:GetService("RunService").Heartbeat:Connect(function()
 		if not mdl or not mdl.Parent then
 			warn("[Cream x TailsDoll] Model destroyed, restarting overlay")
-			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
-        	_G.CreamOnTailsDollSkinUpdateConnection = nil
+            if _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name] then
+                _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name]:Disconnect()
+                _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name] = nil
+            end
 			updatePlayerModel(playerName)
 			return
 		end
-		
 		if plrModel:GetAttribute("Character") ~= "TailsDoll" then
-			_G.CreamOnTailsDollSkinUpdateConnection:Disconnect()
-        	_G.CreamOnTailsDollSkinUpdateConnection = nil
+            if _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name] then
+                _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name]:Disconnect()
+                _G.CreamOnTailsDollSkinHeartbeatConnections[plrModel.Name] = nil
+            end
 			mdl:Destroy()
 			return
 		end
-		
-		newHrp.CFrame = hrp.CFrame + hrpOffset
-        myHead.C0 = ogHead.C0
-
+		newHrp:PivotTo(
+            hrp.CFrame *
+            CFrame.new(0,-1,0)
+        )
+        myHead.C0 = CFrame.new(myHead.C0.Position) * (ogHead.C0 - ogHead.C0.Position)
         -- if Mines and Dodges then Dodges.Value = Mines.Value end
 	end)
 
@@ -220,12 +233,11 @@ end
 
 local function tryUpdatePlayerModel(model)
     if model:GetAttribute("Character") ~= "TailsDoll" then return end
-    _G.TailsDollModel = model
     updatePlayerModel(model.Name)
 end
 
 local function walkPlayers()
-    _G.TailsDollModel = nil
+    player = nil
     task.wait(1)
     for _, model in ipairs(workspace.Players:GetChildren()) do
     	if not model:IsA("Model") then continue end
@@ -263,6 +275,7 @@ end
         -- Dodges.Parent = character
         task.wait(3)
         healthxd.Value = 0/0
+	    character:SetAttribute("Glide anim was replaced", false)
         tryUpdatePlayerModel(character)
     end)
     tryUpdatePlayerModel(game.Players.LocalPlayer.Character)
@@ -328,6 +341,7 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
         end
     end
     print("[Cream x TailsDoll] Listening for your GUI...")
+--
 
 -- CUSTOM SOUNDS
     local assigns = { ["rbxassetid://97101227703333"] = "rbxassetid://139116822099909" }
@@ -348,18 +362,19 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
 
             local path = desc:GetFullName()
 
-            -- print(path) ---
+            print(path) ---
 
             -- if path:find("asd") or path:find("asd") then return end
 
             if path:find("HumanoidRootPart.") then
-                if not _G.TailsDollModel then return end
+                local player = desc.Parent.Parent
+                local isTailsDoll = player:GetAttribute("Character") == "TailsDoll"
 
-                if (desc.Name:find("Retract") or desc.Name:find("Unleashed")) and _G.TailsDollModel.Waist:FindFirstChildOfClass("Sound") then
+                if isTailsDoll and (desc.Name:find("Retract") or desc.Name:find("Unleashed")) then
                     desc.RollOffMaxDistance = desc.RollOffMaxDistance * 4
                     desc.RollOffMinDistance = desc.RollOffMinDistance * 2
                     desc.Volume = 1
-                    for _, child in ipairs(_G.TailsDollModel.Waist:GetChildren()) do
+                    for _, child in ipairs(player.Waist:GetChildren()) do
                         if child.Name:find("CreamSpeech") then 
                             desc.Volume = 0
                             desc:Stop()
@@ -367,54 +382,53 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
                     end
                 end
 
-                local player = desc.Parent.Parent
-                if player:GetAttribute("Character") ~= "TailsDoll" then
-                    if path:find(".Blood Hit") then _G.LastHurtenPlayer = player end
-                    return 
-                end
+                if path:find(".Blood Hit") then _G.LastBloodHitPlayer = player end
 
-                if desc.SoundId == "rbxassetid://77110140707717" then
-                    local clone = desc:Clone()
-                    clone.SoundId = AttackSounds[math.random(1, #AttackSounds)]
-                    clone.Name = clone.SoundId
-                    clone.Parent = desc.Parent
-                    clone:Play()
-                    clone.Loaded:Wait()
-                    game:GetService("Debris"):AddItem(clone, clone.TimeLength + 0.5)
-                end
+                if isTailsDoll then
 
-                local isDefLine = (path:find("Line") and path:find(".Default"))
-
-                if isDefLine or path:find(".Downed") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
-                if path:find(".Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
-
-                if isDefLine or path:find(".Downed") or path:find(".Hurt") then
-                    -- mute others to avoid word stack
-                    for _, child in ipairs(_G.TailsDollModel.Waist:GetChildren()) do
-                        if child.Name:find("CreamSpeech") then child:Stop() end
+                    if desc.SoundId == "rbxassetid://77110140707717" then
+                        local clone = desc:Clone()
+                        clone.SoundId = AttackSounds[math.random(1, #AttackSounds)]
+                        clone.Name = clone.SoundId
+                        clone.Parent = desc.Parent
+                        clone:Play()
+                        clone.Loaded:Wait()
+                        game:GetService("Debris"):AddItem(clone, clone.TimeLength + 0.5)
                     end
-                    -- kill lines
-                    if isDefLine and _G.LastHurtenPlayer then
-                        local c = _G.LastHurtenPlayer:GetAttribute("Character")
-                        if KillLines[c] then 
-                            desc.SoundId = KillLines[c][math.random(1, #KillLines[c])]
-                            _G.LastHurtenPlayer = nil
+
+                    local isDefLine = (path:find(".Default") and path:find("Line")) -- .Default1Line wth
+
+                    if isDefLine or path:find(".Downed") then desc.SoundId = DownedSounds[math.random(1, #DownedSounds)] end
+                    if path:find(".Hurt") then desc.SoundId = StunSounds[math.random(1, #StunSounds)] end
+
+                    if isDefLine or path:find(".Downed") or path:find(".Hurt") then
+                        -- mute others to avoid word stack
+                        for _, child in ipairs(player.Waist:GetChildren()) do
+                            if child.Name:find("CreamSpeech") then child:Stop() end
                         end
+                        -- kill lines
+                        if isDefLine and _G.LastBloodHitPlayer then
+                            local c = _G.LastBloodHitPlayer:GetAttribute("Character")
+                            if KillLines[c] then 
+                                desc.SoundId = KillLines[c][math.random(1, #KillLines[c])]
+                                _G.LastBloodHitPlayer = nil
+                            end
+                        end
+                        -- fuck that, i just recreate my sound ehhh
+                        local sound = Instance.new("Sound")
+                        sound.Name = "CreamSpeech - " .. desc.SoundId
+                        sound.SoundId = desc.SoundId
+                        sound.Volume = desc.Volume
+                        sound.RollOffMaxDistance = desc.RollOffMaxDistance
+                        sound.RollOffMinDistance = desc.RollOffMinDistance
+                        sound.SoundGroup = desc.SoundGroup
+                        sound.Parent = player.Waist
+                        sound:Play()
+                        sound.Loaded:Wait()
+                        game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.5)
+                        -- die
+                        desc.Volume = 0
                     end
-                    -- fuck that, i just recreate my sound ehhh
-                    local sound = Instance.new("Sound")
-                    sound.Name = "CreamSpeech - " .. desc.SoundId
-                    sound.SoundId = desc.SoundId
-                    sound.Volume = desc.Volume
-                    sound.RollOffMaxDistance = desc.RollOffMaxDistance
-                    sound.RollOffMinDistance = desc.RollOffMinDistance
-                    sound.SoundGroup = desc.SoundGroup
-                    sound.Parent = _G.TailsDollModel.Waist
-                    sound:Play()
-                    sound.Loaded:Wait()
-                    game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.5)
-                    -- die
-                    desc.Volume = 0
                 end
             end
         end
@@ -476,5 +490,6 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
     for i = 1, 14 do table.insert(DownedSounds, myAsset("Down" .. i .. ".mp3")) end
     for i = 1, 8 do table.insert(AttackSounds, myAsset("Attack" .. i .. ".mp3")) end
     print("[Cream x TailsDoll] Finished downloading custom sounds...")
+-- 
 
 print("[Cream x TailsDoll] Ready!")
