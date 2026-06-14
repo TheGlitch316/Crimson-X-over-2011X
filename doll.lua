@@ -362,7 +362,7 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
 
             local path = desc:GetFullName()
 
-            print(path) ---
+            -- print(path) ---
 
             -- if path:find("asd") or path:find("asd") then return end
 
