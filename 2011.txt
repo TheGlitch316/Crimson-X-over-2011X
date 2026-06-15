@@ -1,4 +1,4 @@
-﻿print("[Cream x TailsDoll] Now loading... Made by lil2kki <3")
+print("[Cream x TailsDoll] Now loading... Made by lil2kki <3")
 
 local tar = game:GetService("ReplicatedStorage")
 tar = tar:FindFirstChild("Characters", true)
@@ -211,6 +211,148 @@ local function updatePlayerModel(playerName)
 
         -- if Mines and Dodges then Dodges.Value = Mines.Value end
 	end)
+    local function renameByAttribute(attrName)
+        for _, obj in ipairs(mdl:GetDescendants()) do
+            local targetName = obj:GetAttribute(attrName)
+            if targetName then obj.Name = targetName end
+        end
+    end
+
+    local isIdle = false
+    local SonicIdleTrack = plrModel.Humanoid.Animator:LoadAnimation(
+        game:GetService("ReplicatedStorage"):FindFirstChild("Characters", true)
+        :FindFirstChild("Sonic", true):FindFirstChild("Default", true):FindFirstChild("Idle", true)
+    )
+    SonicIdleTrack.Name = "SonicIdle"
+
+    _G.CreamOnTailsDollSkinAnimationPlayedConnections = _G.CreamOnTailsDollSkinAnimationPlayedConnections or {}
+    if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+    end
+	_G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = plrModel.Humanoid.Animator.AnimationPlayed:Connect(function(track)
+		if not mdl or not mdl.Parent or (plrModel:GetAttribute("Character") ~= "2011x") then
+			warn("[Cream x TailsDoll] Disconnecting animatior...")
+            if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+            end
+			return
+		end
+
+        -- print("PLAYED", track.Name, track.Animation.AnimationId)
+
+        if track.Name ~= SonicIdleTrack.Name then 
+            SonicIdleTrack:Stop()
+            renameByAttribute("rename_newName") 
+            track.Stopped:Once(function() if isIdle then
+                renameByAttribute("rename_oldName")
+                SonicIdleTrack:Play(0.1)
+            end end)
+        end
+        if track.Name == "Idle" then
+            isIdle = true
+            track.Stopped:Once(function()
+                isIdle = false
+                SonicIdleTrack:Stop(0.1)
+                renameByAttribute("rename_newName")
+            end)
+            renameByAttribute("rename_oldName")
+            SonicIdleTrack:Play(0.1)
+        end
+    end)
+	if isIdle == false then
+	local isWalk = false
+    local SonicWalkTrack = plrModel.Humanoid.Animator:LoadAnimation(
+        game:GetService("ReplicatedStorage"):FindFirstChild("Characters", true)
+        :FindFirstChild("Sonic", true):FindFirstChild("Default", true):FindFirstChild("Walk", true)
+    )
+    SonicWalkTrack.Name = "SonicWalk"
+
+    _G.CreamOnTailsDollSkinAnimationPlayedConnections = _G.CreamOnTailsDollSkinAnimationPlayedConnections or {}
+    if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+    end
+	_G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = plrModel.Humanoid.Animator.AnimationPlayed:Connect(function(track)
+		if not mdl or not mdl.Parent or (plrModel:GetAttribute("Character") ~= "2011x") then
+			warn("[Cream x TailsDoll] Disconnecting animatior...")
+            if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+            end
+			return
+		end
+
+        -- print("PLAYED", track.Name, track.Animation.AnimationId)
+
+        if track.Name ~= SonicWalkTrack.Name then 
+            SonicWalkTrack:Stop()
+            renameByAttribute("rename_newName") 
+            track.Stopped:Once(function() if isIdle then
+                renameByAttribute("rename_oldName")
+                SonicWalkTrack:Play(0.1)
+            end end)
+        end
+        if track.Name == "Walk" then
+            isWalk = true
+            track.Stopped:Once(function()
+                isWalk = false
+                SonicWalkTrack:Stop(0.1)
+                renameByAttribute("rename_newName")
+            end)
+            renameByAttribute("rename_oldName")
+            SonicWalkTrack:Play(0.1)
+        end
+    end) 
+	end
+	if isWalk == false then
+	if isIdle == false then
+    local isRun = false
+    local SonicRunTrack = plrModel.Humanoid.Animator:LoadAnimation(
+        game:GetService("ReplicatedStorage"):FindFirstChild("Characters", true)
+        :FindFirstChild("Sonic", true):FindFirstChild("Default", true):FindFirstChild("Run", true)
+    )
+    SonicRunTrack.Name = "SonicRun"
+
+    _G.CreamOnTailsDollSkinAnimationPlayedConnections = _G.CreamOnTailsDollSkinAnimationPlayedConnections or {}
+    if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+        _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+    end
+	_G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = plrModel.Humanoid.Animator.AnimationPlayed:Connect(function(track)
+		if not mdl or not mdl.Parent or (plrModel:GetAttribute("Character") ~= "2011x") then
+			warn("[Cream x TailsDoll] Disconnecting animatior...")
+            if _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] then
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name]:Disconnect()
+                _G.CreamOnTailsDollSkinAnimationPlayedConnections[plrModel.Name] = nil
+            end
+			return
+		end
+
+        -- print("PLAYED", track.Name, track.Animation.AnimationId)
+
+        if track.Name ~= SonicRunTrack.Name then 
+            SonicRunTrack:Stop()
+            renameByAttribute("rename_newName") 
+            track.Stopped:Once(function() if isIdle then
+                renameByAttribute("rename_oldName")
+                SonicRunTrack:Play(0.1)
+            end end)
+        end
+        if track.Name == "Run" then
+            isRun = true
+            track.Stopped:Once(function()
+                isRun = false
+                SonicRunTrack:Stop(0.1)
+                renameByAttribute("rename_newName")
+            end)
+            renameByAttribute("rename_oldName")
+            SonicRunTrack:Play(0.1)
+        end
+    end) 
+	end
+	end
 
     return plrModel
 end
@@ -251,7 +393,7 @@ end
         print("[Cream x TailsDoll] Previous game сharacter added connection destroyed")
     end
     _G.CreamOnTailsDollSkinCharacterConn = game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
-	    if character:GetAttribute("Character") ~= "TailsDoll" then return end
+	    if character:GetAttribute("Character") ~= "2011x" then return end
         local healthxd = Instance.new("NumberValue")
         healthxd.Name = "Health"
         healthxd.Parent = character
@@ -284,13 +426,14 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
             local updating = false
             local function repl(label)
                 if updating then return end
-                if desc.Text:find("TailsDoll (2)") then return end
+                if desc.Text:find("Sonic.exe") then return end
                 updating = true
-                if desc.Text == "S.T.E.P." then desc.Text = "Surprize\nPresent <3" end
-                if desc.Text == "Reach Out" then desc.Text = "Tag ~" end
-                if desc.Text == "Brighter Day" then desc.Text = "Laser thingy" end
-                if desc.Text == "Tripwire" then desc.Text = " [CORRUPTED] " end
-                if desc.Text == "TailsDoll" then desc.Text = "TailsDoll (2)" end
+                if desc.Text == "God's Trickery" then desc.Text = "Surprize" end
+                if desc.Text == "Charge" then desc.Text = "Tag" end
+                if desc.Text == "invisibility" then desc.Text = "Hide & seek" end
+                if desc.Text == "Rage Mode" then desc.Text = "Times Up" end
+                if desc.Text == "2011X" then desc.Text = " Crimson " end
+                if desc.Text == "2011x" then desc.Text = "Sonic.exe" end
                 if desc.Text == "Can you feel the sunshine?" then 
                     -- desc.TextWrapped = false
                     -- desc.Font = Enum.Font.Code
@@ -407,13 +550,13 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
 
     print("[Cream x TailsDoll] Loading custom sounds...")
     local function myAsset(fileName)
-        local cachePath = "cache/cream-on-doll/" .. fileName
+        local cachePath = "cache/Crimson-X-over-2011X/" .. fileName
         if isfile(cachePath) then return getcustomasset(cachePath) end
         local success, result = pcall(
             function()
                 return game:HttpGet(
-                    "https://github.com/thaLILNIKKI/Cream.LMS-for-TailsDoll-Outcome-Memories/releases/download/"
-                    .. "assets/" .. fileName
+                    "https://github.com/TheGlitch316/Crimson-X-over-2011X/releases/download/"
+                    .. "music/" .. fileName
                 )
             end
         )
@@ -426,16 +569,12 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
         end
     end
     assigns = {
-        ["rbxassetid://117478513053834"] = myAsset("WinScreen.mp3"),
-	
-        ["rbxassetid://80901931085615"] = myAsset("NormalChaseFix.mp3"),
-        ["rbxassetid://129416111545242"] = myAsset("TerrorRadius.mp3"),
-        ["rbxassetid://112879248941055"] = myAsset("LastLifeChase3.mp3"),
-        
-        ["rbxassetid://112976135484851"] = myAsset("Unleashed1.mp3"),
-        ["rbxassetid://106071428647005"]  = myAsset("Unleashed2.mp3"),
-        ["rbxassetid://87302988643016"]  = myAsset("Unleashed3.mp3"),
-        ["rbxassetid://131820864449998"] = myAsset("Retract.mp3"), -- giggle or smth here ~
+        ["rbxassetid://89556255931539"] = myAsset("Victory.mp3"),
+        ["rbxassetid://72233377540950"] = myAsset("rage.mp3"),
+        ["rbxassetid://130107110141582"] = myAsset("TheChase.mp3"),
+        ["rbxassetid://18682521896"] = myAsset("Terror.mp3"),
+        ["rbxassetid://112879248941055"] = myAsset("LastLife.mp3"),
+        ["rbxassetid://16225515650"] = myAsset("Choke"),
 
         ["rbxassetid://97101227703333"] = "rbxassetid://139116822099909",  -- .Hit1]  2011x Hit2
         ["rbxassetid://93465914238963"] = "rbxassetid://88164444698409",  -- Lilith.Hit2] 
@@ -446,85 +585,19 @@ print("[Cream x TailsDoll] Players scanned, game state and your char being liste
         ["rbxassetid://134998846301914"] = "rbxassetid://77110140707717",  -- basic Swing
     }
     KillLines = {
-        ["Sonic"] = { myAsset("Sonic.mp3"), myAsset("Sonic2.mp3") },
-        ["Tails"] = { myAsset("Tails.mp3"),  myAsset("Tails2.mp3"),  myAsset("Tails3.mp3") },
-        ["MetalSonic"] = { myAsset("MetalSonic.mp3"),  myAsset("MetalSonic2.mp3") },
-        ["Amy"] = { myAsset("Amy.mp3"),  myAsset("Amy2.mp3"),  myAsset("Amy3.mp3"),  myAsset("Amy4.mp3") },
-        ["Silver"] = { myAsset("Silver.mp3") },
-        ["Blaze"] = { myAsset("Blaze.mp3") },
-        ["Eggman"] = { myAsset("Eggman.mp3") },
-        ["Cream"] = { myAsset("Cream.mp3"),  myAsset("Cream2.mp3") },
-        ["Knuckles"] = { myAsset("Knuckles.mp3") }
+        ["Sonic"] = { myAsset("CrimSonic.mp3") },
+        ["Tails"] = { myAsset("CrimTails.mp3") },
+        ["MetalSonic"] = { myAsset("CrimMetal.mp3") },
+        ["Amy"] = { myAsset("CrimAmy.mp3") },
+        ["Silver"] = { myAsset("CrimSilver.mp3") },
+        ["Blaze"] = { myAsset("CrimBlaze.mp3") },
+        ["Eggman"] = { myAsset("CrimEgg.mp3") },
+        ["Cream"] = { myAsset("CrimCream.mp3") },
+        ["Knuckles"] = { myAsset("CrimKnuckles.mp3") }
     }
-    for i = 1, 28 do table.insert(StunSounds, myAsset("Stun" .. i .. ".mp3")) end
-    for i = 1, 14 do table.insert(DownedSounds, myAsset("Down" .. i .. ".mp3")) end
-    for i = 1, 8 do table.insert(AttackSounds, myAsset("Attack" .. i .. ".mp3")) end
+    for i = 1, 14 do table.insert(DownedSounds, myAsset("CrimDown2.mp3")) end
     print("[Cream x TailsDoll] Finished downloading custom sounds...")
-	local viewportParts = {}
-		local viewportPartsVersion = 0
-		local viewportHumanoid = viewportModel:FindFirstChild("Humanoid")
-		local currentViewportAnimation = nil
-		local viewportAnimations = {
-			Idle = {id = "rbxassetid://102209996601966", track = nil, shouldLoop = true},
-			Walk = {id = "rbxassetid://128300704291171", track = nil, shouldLoop = true},
-			Run  = {id = "rbxassetid://123558237797584",  track = nil, shouldLoop = true},
-			Jump = {id = "rbxassetid://125236763187476", track = nil, shouldLoop = false},
-			Fall = {id = "rbxassetid://76641742723792", track = nil, shouldLoop = true}
-		}
-		local function loadViewportAnimation(animName)
-			local animData = viewportAnimations[animName]
-			if not animData or not viewportHumanoid then return nil end
-			local animation = Instance.new("Animation")
-			animation.AnimationId = animData.id
-			local track = viewportHumanoid:LoadAnimation(animation)
-			track.Looped = animData.shouldLoop
-			animData.track = track
-			return track
-		end
-		local function playViewportAnimation(animName)
-			if not viewportHumanoid then return end
-			for name, animData in pairs(viewportAnimations) do
-				if animData.track and animData.track.IsPlaying then
-					animData.track:Stop()
-				end
-			end
-			local animData = viewportAnimations[animName]
-			if animData then
-				if not animData.track then
-					loadViewportAnimation(animName)
-				end
-				if animData.track then
-					animData.track:Play()
-				end
-			end
-		end
-		local function updateViewportAnimations()
-			local newAnimation = "Idle"
-			if viewportHumanoid then
-				if viewportHumanoid.MoveDirection.Magnitude > 0.1 then
-					if viewportHumanoid:GetState() == Enum.HumanoidStateType.Running then
-						if viewportHumanoid.WalkSpeed > 16 then
-							newAnimation = "Run"
-						else
-							newAnimation = "Walk"
-						end
-					end
-				else
-					local state = viewportHumanoid:GetState()
-					if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
-						if state == Enum.HumanoidStateType.Jumping then
-							newAnimation = "Jump"
-						else
-							newAnimation = "Fall"
-						end
-					else
-						newAnimation = "Idle"
-					end
-				end
-			end
-			if newAnimation ~= currentViewportAnimation then
-				playViewportAnimation(newAnimation)
-				currentViewportAnimation = newAnimation
-			end
-		end
+-- 
+
 print("[Cream x TailsDoll] Ready!")
+
